@@ -32,6 +32,14 @@ def get_anon_id(x_anon_id: Optional[str] = Header(None, alias="X-Anon-Id")) -> s
     return x_anon_id
 
 
+def get_anon_id_optional(x_anon_id: Optional[str] = Header(None, alias="X-Anon-Id")) -> Optional[str]:
+    if x_anon_id is None:
+        return None
+    if not _UUID_RE.match(x_anon_id):
+        raise HTTPException(status_code=400, detail="anon_id: 必须是 UUID")
+    return x_anon_id
+
+
 @router.get("/posts", response_model=List[PostListItem])
 def list_posts(
     post_type: PostType = Query(...),
@@ -74,6 +82,7 @@ def create_post(
     contact_detail: str = Form(...),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
+    anon_id: Optional[str] = Depends(get_anon_id_optional),
 ):
     try:
         parsed_time = datetime.fromisoformat(event_time)
@@ -118,6 +127,7 @@ def create_post(
         event_time=payload.event_time,
         contact_type=payload.contact_type.value,
         contact_detail=payload.contact_detail,
+        anon_id=anon_id,
     )
     try:
         db.add(post)
