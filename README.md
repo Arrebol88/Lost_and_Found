@@ -1,12 +1,15 @@
 # 南哪寻宝（NJU LostFound）
 
-南京大学失物招领与寻物启事平台。当前版本实现发帖、首页展示与筛选。
+南京大学失物招领与寻物启事平台。当前版本支持发帖、首页展示与筛选、帖子详情、点赞与评论。
 
 ## 功能
 
 - 首页默认展示“寻物”帖子，底部导航可切换“寻物 / 寻主”
 - 首页支持按物品种类、丢失/捡到时间、校区地点筛选帖子
 - 帖子卡片展示标题、校区地点、丢失/捡到时间、首图缩略图（如有）
+- 点击卡片进入帖子详情页，展示完整字段（联系方式默认隐藏，点击“查看联系方式”后展开）
+- 详情页点赞按钮（再次点击取消点赞）与点赞数实时刷新
+- 详情页评论：文字必填、图片选填（与发帖共用图片校验），评论作者可删除自己发表的评论
 - 首页一键发帖（无需登录）
 - 寻物帖 / 寻主帖类型选择
 - 9 类物品分类（电子产品类、个人证件与卡类、箱包与收纳、配饰、衣物、日常小件、办公与学习、运动与户外、个人护理与健康）
@@ -18,7 +21,7 @@
 
 - 后端：FastAPI + SQLAlchemy + SQLite（WAL）
 - 前端：Vue 3 + Vite + axios
-- 测试：pytest + httpx（33 用例）；Vitest + @vue/test-utils（18 用例）
+- 测试：pytest + httpx（48 用例）；Vitest + @vue/test-utils（29 用例）
 - 容器化：Docker + docker-compose
 - CI：GitHub Actions
 
@@ -111,4 +114,6 @@ npm test
 - [发帖功能 PLAN](docs/superpowers/plans/2026-06-13-post-creation-plan.md)
 - [帖子展示与筛选 SPEC](docs/superpowers/specs/2026-06-13-post-listing-filters-design.md)
 - [帖子展示与筛选 PLAN](docs/superpowers/plans/2026-06-13-post-listing-filters-plan.md)
+- [帖子详情与互动 SPEC](docs/superpowers/specs/2026-06-13-post-detail-interactions-design.md)
+- [帖子详情与互动 PLAN](docs/superpowers/plans/2026-06-13-post-detail-interactions-plan.md)
 - [AGENT_LOG](AGENT_LOG.md)
