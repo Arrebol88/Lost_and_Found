@@ -1,5 +1,6 @@
 <script setup>
 import { ref } from 'vue'
+import TypePicker from './components/TypePicker.vue'
 
 const view = ref('home')
 const postType = ref(null)
@@ -17,12 +18,7 @@ function backHome() { view.value = 'home'; postType.value = null }
       <button class="primary" data-testid="btn-create" @click="openPicker">发帖</button>
     </section>
 
-    <section v-else-if="view === 'picker'" class="picker">
-      <h2>选择帖子类型</h2>
-      <button class="primary" @click="pickType('found')">我捡到了东西（寻主帖）</button>
-      <button class="primary" @click="pickType('lost')">我丢了东西（寻物帖）</button>
-      <button class="link" @click="backHome">返回</button>
-    </section>
+    <TypePicker v-else-if="view === 'picker'" @pick="pickType" @cancel="backHome" />
 
     <section v-else class="form-wrap">
       <p>表单将在任务 11 实装。当前 post_type = {{ postType }}</p>
