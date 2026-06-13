@@ -76,6 +76,22 @@ export async function deleteComment(id) {
   await http.delete(`/api/comments/${id}`)
 }
 
+export async function updatePost(id, form) {
+  const fd = new FormData()
+  Object.entries(form).forEach(([k, v]) => {
+    if (v === null || v === undefined || v === '') return
+    fd.append(k, v)
+  })
+  const r = await http.put(`/api/posts/${id}`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+  return r.data
+}
+
+export async function deletePost(id) {
+  await http.delete(`/api/posts/${id}`)
+}
+
 export function imageUrl(path) {
   if (!path) return ''
   if (import.meta.env.PROD) return `${baseURL}/${path}`
