@@ -39,3 +39,58 @@ def test_reject_unsupported_mime(tmp_path, monkeypatch):
     from app.storage import save_image, InvalidImageError
     with pytest.raises(InvalidImageError):
         save_image(filename="a.gif", content=b"GIF89a", content_type="image/gif")
+
+
+# ---- API 级错误分支与边界（任务 8）----
+
+from datetime import datetime, timedelta
+
+
+def _api_form(**overrides):
+    base = {
+        "post_type": "found",
+        "title": "黑色雨伞",
+        "category": "daily",
+        "description": "长柄",
+        "location": "逸夫楼 B201",
+        "event_time": (datetime.now() - timedelta(hours=1)).isoformat(timespec="minutes"),
+        "contact_type": "self_pickup",
+        "contact_detail": "工作日 8-17 自取",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_api_reject_lost_with_self_pickup(client):
+    r = client.post("/api/posts", data=_api_form(post_type="lost"))
+    assert r.status_code == 400
+
+
+def test_api_reject_invalid_category(client):
+    r = client.post("/api/posts", data=_api_form(category="not_a_category"))
+    assert r.status_code == 400
+
+
+def test_api_reject_event_time_in_future(client):
+    future = (datetime.now() + timedelta(hours=1)).isoformat(timespec="minutes")
+    r = client.post("/api/posts", data=_api_form(event_time=future))
+    assert r.status_code == 400
+
+
+def test_api_reject_oversize_image(client):
+    big = b"\x89PNG\r\n\x1a\n" + b"\x00" * (5 * 1024 * 1024 + 1)
+    r = client.post("/api/posts", data=_api_form(),
+                    files={"image": ("big.png", big, "image/png")})
+    assert r.status_code == 413
+
+
+def test_api_reject_fake_image(client):
+    fake = b"MZ\x90\x00" + b"\x00" * 100
+    r = client.post("/api/posts", data=_api_form(),
+                    files={"image": ("a.jpg", fake, "image/jpeg")})
+    assert r.status_code == 400
+
+
+def test_api_reject_title_51_chars(client):
+    r = client.post("/api/posts", data=_api_form(title="x" * 51))
+    assert r.status_code == 400
