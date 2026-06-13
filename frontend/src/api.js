@@ -15,3 +15,17 @@ export async function createPost(form) {
   })
   return r.data
 }
+
+export async function listPosts(filters) {
+  const params = Object.fromEntries(
+    Object.entries(filters).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+  )
+  const r = await http.get('/api/posts', { params })
+  return r.data
+}
+
+export function imageUrl(path) {
+  if (!path) return ''
+  if (import.meta.env.PROD) return `${baseURL}/${path}`
+  return `/${path}`
+}

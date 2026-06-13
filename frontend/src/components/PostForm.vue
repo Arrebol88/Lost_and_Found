@@ -16,6 +16,13 @@ const CATEGORIES = [
   ['personal_care', '个人护理与健康']
 ]
 
+const LOCATIONS = [
+  ['gulou', '鼓楼校区'],
+  ['xianlin', '仙林校区'],
+  ['suzhou', '苏州校区'],
+  ['pukou', '浦口校区']
+]
+
 const FOUND_OPTIONS = [
   ['self_pickup', '自取'],
   ['contact', '联系方式'],
@@ -60,7 +67,7 @@ function validate() {
   if (!title.value.trim()) return '请填写物品名称'
   if (title.value.length > 50) return '物品名称不能超过 50 字'
   if (!category.value) return '请选择物品种类'
-  if (!location.value.trim()) return '请填写地点'
+  if (!location.value) return '请选择地点'
   if (!eventTime.value) return '请选择时间'
   if (!contactDetail.value.trim()) return '请填写联系方式描述'
   return ''
@@ -108,7 +115,10 @@ function onSubmit() {
     </label>
 
     <label>{{ postType === 'lost' ? '丢失' : '捡到' }}地点 *
-      <input data-testid="location" v-model="location" maxlength="100" />
+      <select data-testid="location" v-model="location">
+        <option value="" disabled>请选择</option>
+        <option v-for="[v, t] in LOCATIONS" :key="v" :value="v">{{ t }}</option>
+      </select>
     </label>
 
     <label>{{ postType === 'lost' ? '丢失' : '捡到' }}时间 *
@@ -123,7 +133,7 @@ function onSubmit() {
       </label>
     </fieldset>
 
-    <label>{{ postType === 'lost' ? '联系方式 *' : '具体描述 *' }}
+    <label>{{ postType === 'lost' ? '联系方式 *' : '联系方式具体描述 *' }}
       <textarea data-testid="contact-detail" v-model="contactDetail" maxlength="200" rows="2" />
     </label>
 
