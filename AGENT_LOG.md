@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-06-13 帖子展示与筛选功能实现（T1–T7）
+
+**触发技能链：** `brainstorming` → `writing-plans` → `using-git-worktrees` → `executing-plans` → 每任务 `test-driven-development` → `verification-before-completion`
+
+**worktree：** `.worktrees/post-listing-filters` ← `feature/post-listing-filters`
+
+| Commit | 任务 | 备注 |
+|---|---|---|
+| `50e1035` | T1 后端地点枚举与 schema 校验 | 新增 `CampusLocation`，拒绝自由文本地点 |
+| `1b2cf1c` | T2 后端模型约束与创建接口地点更新 | 新增 DB `ck_location`，创建接口存储校区枚举值 |
+| `c26e6b6` | T3 后端列表 API 与过滤 | `GET /api/posts` 支持类型、分类、时间、地点过滤；列表输出不含联系方式和描述 |
+| `d07b7a6` | T4 前端 API 封装与发帖表单更新 | 地点改为校区 select；寻主帖标签改为“联系方式具体描述” |
+| `5459896` | T5 前端过滤器和帖子卡片组件 | 新增 `PostFilters`、`PostCard`、`PostList` |
+| `c9529fd` | T6 首页集成列表、过滤器和底部导航 | 默认寻物页；底部寻物/寻主切换；顶部三过滤器 |
+| 待续 | T7 文档、全量验证与收尾 | 更新 README、本日志并执行最终验证 |
+
+**测试总结（阶段内验证）：**
+- 后端 pytest：`33 passed`
+- 前端 Vitest：`18 passed`
+
+**实现边界：**
+- 未实现帖子详情页；卡片不可点击。
+- 首页卡片不展示联系方式、不展示完整描述。
+- 时间过滤按服务端当前时间计算。
+
+---
+
 ## 2026-06-13 实现完成（T1–T14）
 
 **触发技能链：** `subagent-driven-development`（偏离声明见下文）→ 每任务 `test-driven-development` 红绿循环 → `verification-before-completion`
