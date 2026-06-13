@@ -26,6 +26,10 @@ class Post(Base):
             name="ck_category",
         ),
         CheckConstraint(
+            "location IN ('gulou','xianlin','suzhou','pukou')",
+            name="ck_location",
+        ),
+        CheckConstraint(
             "contact_type IN ('self_pickup','contact','handed_over','owner_contact')",
             name="ck_contact_type",
         ),

@@ -16,3 +16,11 @@ def test_posts_table_exists(client):
         "contact_type", "contact_detail", "created_at",
     }
     assert expected.issubset(cols)
+
+
+def test_posts_table_has_location_check(client):
+    from sqlalchemy import inspect
+    from app.database import engine
+    checks = inspect(engine).get_check_constraints("posts")
+    sql = " ".join(c["sqltext"] for c in checks)
+    assert "location IN ('gulou','xianlin','suzhou','pukou')" in sql

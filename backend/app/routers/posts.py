@@ -63,7 +63,7 @@ def create_post(
         category=payload.category.value,
         image_path=image_rel,
         description=payload.description,
-        location=payload.location,
+        location=payload.location.value,
         event_time=payload.event_time,
         contact_type=payload.contact_type.value,
         contact_detail=payload.contact_detail,

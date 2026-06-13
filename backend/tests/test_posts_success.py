@@ -8,7 +8,7 @@ def _form(**overrides):
         "title": "黑色雨伞",
         "category": "daily",
         "description": "长柄",
-        "location": "逸夫楼 B201",
+        "location": "gulou",
         "event_time": (datetime.now() - timedelta(hours=1)).isoformat(timespec="minutes"),
         "contact_type": "self_pickup",
         "contact_detail": "工作日 8-17 自取",
@@ -45,3 +45,15 @@ def test_create_found_post_with_png(client):
     upload_dir = os.environ["NJU_UPLOAD_DIR"]
     abs_p = os.path.join(upload_dir, body["image_path"].split("uploads/", 1)[1])
     assert os.path.exists(abs_p)
+
+
+def test_create_post_rejects_free_text_location(client):
+    r = client.post("/api/posts", data=_form(location="逸夫楼 B201"))
+    assert r.status_code == 400
+    assert "location" in r.json()["detail"]
+
+
+def test_create_post_accepts_campus_location(client):
+    r = client.post("/api/posts", data=_form(location="xianlin"))
+    assert r.status_code == 201, r.text
+    assert r.json()["location"] == "xianlin"
