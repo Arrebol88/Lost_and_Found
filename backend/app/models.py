@@ -1,5 +1,8 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Text, DateTime, CheckConstraint
+from sqlalchemy import (
+    Column, Integer, String, Text, DateTime, CheckConstraint,
+    ForeignKey, UniqueConstraint, Index,
+)
 from app.database import Base
 
 
@@ -38,4 +41,32 @@ class Post(Base):
             "(post_type='found' AND contact_type IN ('self_pickup','contact','handed_over'))",
             name="ck_post_contact_match",
         ),
+    )
+
+
+class PostLike(Base):
+    __tablename__ = "post_likes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
+    anon_id = Column(String(36), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+    __table_args__ = (
+        UniqueConstraint("post_id", "anon_id", name="uq_post_likes_post_anon"),
+    )
+
+
+class PostComment(Base):
+    __tablename__ = "post_comments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
+    anon_id = Column(String(36), nullable=False)
+    content = Column(String(200), nullable=False)
+    image_path = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+    __table_args__ = (
+        Index("ix_post_comments_post_created", "post_id", "created_at"),
     )

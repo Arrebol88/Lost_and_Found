@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-06-13 帖子详情与互动功能实现（T1–T10）
+
+**触发技能链：** `brainstorming` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`（Trae 缺 Task 工具，主会话内联执行 + 任务间自审）→ 每任务 `test-driven-development` → `verification-before-completion`
+
+**worktree：** `.worktrees/post-detail-interactions` ← `feature/post-detail-interactions`
+
+| Commit | 任务 | 备注 |
+|---|---|---|
+| `865f7d4` | T1 后端表结构与 schema 基线 | 新增 `post_likes`、`post_comments` 表与 `PostDetailOut/LikeToggleOut/CommentOut` |
+| `a788b48` | T2 帖子详情接口 | `GET /api/posts/{id}` 返回完整字段，含 `like_count / liked_by_me`；`X-Anon-Id` UUID 校验 |
+| `f3e9b9d` | T3 点赞 toggle 接口 | `POST /api/posts/{id}/likes` toggle；同 anon 切换、不同 anon 独立计数 |
+| `c158c01` | T4 评论 CRUD 接口 | 文字必填、图片复用发帖校验；删除越权 403、连带物理删除图片 |
+| `b21b444` | T5 前端 API 封装 | axios 拦截器注入 `X-Anon-Id`，新增 `getPost / toggleLike / listComments / createComment / deleteComment` |
+| `79ef2e0` | T6 PostCard 可点击 | 卡片整块可点 emit `select`，键盘回车也可触发 |
+| `865481e` | T7 CommentForm/CommentList | 文字+图片输入，`disabled` 控制；自己发的评论展示删除按钮 |
+| `aa9e7a2` | T8 PostDetail 页面 | 默认隐藏联系方式，点击展开；点赞按钮切换；评论提交/删除流闭环 |
+| `743deb8` | T9 App 集成详情视图 | `view='detail'` 接入 `PostDetail`；`PostList` 透传 `select` |
+| 待续 | T10 文档与全量验证 | 更新 README、本日志，运行后端 + 前端 + Docker 验证 |
+
+**测试总结（阶段内验证）：**
+- 后端 pytest：`48 passed`（新增 5 + 4 + 6 = 15 个用例）
+- 前端 Vitest：`29 passed`（新增 2 + 1 + 4 + 3 + 1 = 11 个用例）
+
+**实现边界：**
+- 不引入登录系统，使用 `X-Anon-Id` UUID 作为弱身份。
+- 不实现帖子编辑/删除、评论编辑、评论分页、详情联系方式之外的脱敏。
+- 详情页不依赖 vue-router，仅在 `App.vue` 中维持 `view` 与 `selectedPostId` 状态。
+
+**已知偏离 Superpowers 规范的处：**
+- Trae 当前没有真正的子代理 Task 工具，本轮按 `subagent-driven-development` 流程在主会话内联执行，每任务严格遵循红→绿→commit，但任务间审查由主会话自审完成。
+
+---
+
 ## 2026-06-13 帖子展示与筛选功能实现（T1–T7）
 
 **触发技能链：** `brainstorming` → `writing-plans` → `using-git-worktrees` → `executing-plans` → 每任务 `test-driven-development` → `verification-before-completion`
