@@ -163,3 +163,36 @@ def get_post(
     )
     base = PostOut.model_validate(post).model_dump()
     return PostDetailOut(**base, like_count=like_count, liked_by_me=liked)
+
+
+@router.post("/posts/{post_id}/likes", response_model=LikeToggleOut)
+def toggle_like(
+    post_id: int,
+    db: Session = Depends(get_db),
+    anon_id: str = Depends(get_anon_id),
+):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="post not found")
+    existing = (
+        db.query(models.PostLike)
+        .filter(
+            models.PostLike.post_id == post_id,
+            models.PostLike.anon_id == anon_id,
+        )
+        .first()
+    )
+    if existing is None:
+        db.add(models.PostLike(post_id=post_id, anon_id=anon_id))
+        db.commit()
+        liked = True
+    else:
+        db.delete(existing)
+        db.commit()
+        liked = False
+    count = (
+        db.query(models.PostLike)
+        .filter(models.PostLike.post_id == post_id)
+        .count()
+    )
+    return LikeToggleOut(liked=liked, like_count=count)
