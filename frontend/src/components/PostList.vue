@@ -5,13 +5,20 @@ defineProps({
   posts: { type: Array, required: true },
   loading: { type: Boolean, default: false }
 })
+const emit = defineEmits(['select'])
 </script>
 
 <template>
   <div class="list">
     <p v-if="loading" class="state">加载中...</p>
     <p v-else-if="posts.length === 0" class="state">暂无帖子</p>
-    <PostCard v-else v-for="post in posts" :key="post.id" :post="post" />
+    <PostCard
+      v-else
+      v-for="post in posts"
+      :key="post.id"
+      :post="post"
+      @select="(id) => emit('select', id)"
+    />
   </div>
 </template>
 

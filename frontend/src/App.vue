@@ -4,6 +4,7 @@ import TypePicker from './components/TypePicker.vue'
 import PostForm from './components/PostForm.vue'
 import PostFilters from './components/PostFilters.vue'
 import PostList from './components/PostList.vue'
+import PostDetail from './components/PostDetail.vue'
 import { createPost, listPosts } from './api.js'
 
 const view = ref('home')
@@ -13,10 +14,20 @@ const filters = ref({ category: '', time_range: '', location: '' })
 const posts = ref([])
 const loading = ref(false)
 const submitting = ref(false)
+const selectedPostId = ref(null)
 
 function openPicker() { view.value = 'picker' }
 function pickType(t) { postType.value = t; view.value = 'form' }
-function backHome() { view.value = 'home'; postType.value = null }
+function backHome() {
+  view.value = 'home'
+  postType.value = null
+  selectedPostId.value = null
+}
+
+function onSelectPost(id) {
+  selectedPostId.value = id
+  view.value = 'detail'
+}
 
 async function loadPosts() {
   loading.value = true
@@ -58,13 +69,19 @@ watch([activeTab, filters], loadPosts, { deep: true })
 
     <section v-if="view === 'home'" class="home">
       <PostFilters :filters="filters" @update:filters="filters = $event" />
-      <PostList :posts="posts" :loading="loading" />
+      <PostList :posts="posts" :loading="loading" @select="onSelectPost" />
       <button class="primary floating" data-testid="btn-create" @click="openPicker">发帖</button>
       <nav class="bottom-nav">
         <button data-testid="tab-lost" :class="{ active: activeTab === 'lost' }" @click="switchTab('lost')">寻物</button>
         <button data-testid="tab-found" :class="{ active: activeTab === 'found' }" @click="switchTab('found')">寻主</button>
       </nav>
     </section>
+
+    <PostDetail
+      v-else-if="view === 'detail' && selectedPostId !== null"
+      :post-id="selectedPostId"
+      @back="backHome"
+    />
 
     <TypePicker v-else-if="view === 'picker'"
                 @pick="pickType" @cancel="backHome" />
