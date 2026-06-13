@@ -1,6 +1,7 @@
+import re
 from datetime import datetime, timedelta
 from typing import List, Optional
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
 
@@ -9,7 +10,9 @@ from app import models, storage
 from app.schemas import (
     CampusLocation,
     Category,
+    LikeToggleOut,
     PostCreate,
+    PostDetailOut,
     PostListItem,
     PostOut,
     PostType,
@@ -17,6 +20,16 @@ from app.schemas import (
 )
 
 router = APIRouter(prefix="/api", tags=["posts"])
+
+_UUID_RE = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+
+
+def get_anon_id(x_anon_id: Optional[str] = Header(None, alias="X-Anon-Id")) -> str:
+    if not x_anon_id or not _UUID_RE.match(x_anon_id):
+        raise HTTPException(status_code=400, detail="anon_id: 必须是 UUID")
+    return x_anon_id
 
 
 @router.get("/posts", response_model=List[PostListItem])
@@ -123,3 +136,30 @@ def _first_error(e: ValidationError) -> str:
     err = e.errors()[0]
     loc = ".".join(str(x) for x in err.get("loc", []))
     return f"{loc}: {err.get('msg', '校验失败')}"
+
+
+@router.get("/posts/{post_id}", response_model=PostDetailOut)
+def get_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    anon_id: str = Depends(get_anon_id),
+):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="post not found")
+    like_count = (
+        db.query(models.PostLike)
+        .filter(models.PostLike.post_id == post_id)
+        .count()
+    )
+    liked = (
+        db.query(models.PostLike)
+        .filter(
+            models.PostLike.post_id == post_id,
+            models.PostLike.anon_id == anon_id,
+        )
+        .first()
+        is not None
+    )
+    base = PostOut.model_validate(post).model_dump()
+    return PostDetailOut(**base, like_count=like_count, liked_by_me=liked)
