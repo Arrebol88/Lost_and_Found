@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-const http = axios.create({ baseURL: '' })
+// 开发态走 vite 代理（baseURL 空），生产态浏览器直接访问后端 8000
+const baseURL = import.meta.env.PROD ? 'http://localhost:8000' : ''
+const http = axios.create({ baseURL })
 
 export async function createPost(form) {
   const fd = new FormData()
