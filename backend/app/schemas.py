@@ -21,6 +21,13 @@ class Category(str, Enum):
     personal_care = "personal_care"
 
 
+class CampusLocation(str, Enum):
+    gulou = "gulou"
+    xianlin = "xianlin"
+    suzhou = "suzhou"
+    pukou = "pukou"
+
+
 class ContactType(str, Enum):
     self_pickup = "self_pickup"
     contact = "contact"
@@ -33,7 +40,7 @@ class PostCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=50)
     category: Category
     description: Optional[str] = Field(None, max_length=500)
-    location: str = Field(..., min_length=1, max_length=100)
+    location: CampusLocation
     event_time: datetime
     contact_type: ContactType
     contact_detail: str = Field(..., min_length=1, max_length=200)
@@ -64,7 +71,7 @@ class PostOut(BaseModel):
     category: Category
     image_path: Optional[str]
     description: Optional[str]
-    location: str
+    location: CampusLocation
     event_time: datetime
     contact_type: ContactType
     contact_detail: str

@@ -9,7 +9,7 @@ def _payload(**overrides):
         title="黑色雨伞",
         category="daily",
         description=None,
-        location="逸夫楼 B201",
+        location="gulou",
         event_time=datetime.now() - timedelta(hours=1),
         contact_type="self_pickup",
         contact_detail="工作日 8-17 自取",
@@ -63,3 +63,9 @@ def test_invalid_category_rejected():
     from app.schemas import PostCreate
     with pytest.raises(ValidationError):
         PostCreate(**_payload(category="not_a_category"))
+
+
+def test_invalid_location_rejected():
+    from app.schemas import PostCreate
+    with pytest.raises(ValidationError):
+        PostCreate(**_payload(location="逸夫楼 B201"))
