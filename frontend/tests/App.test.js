@@ -11,6 +11,8 @@ vi.mock('../src/api.js', () => ({
   listComments: vi.fn(),
   createComment: vi.fn(),
   deleteComment: vi.fn(),
+  updatePost: vi.fn(),
+  deletePost: vi.fn(),
   imageUrl: p => `/${p}`
 }))
 
@@ -60,5 +62,26 @@ describe('App homepage listing', () => {
     await w.get('[data-testid="post-card"]').trigger('click')
     await flushPromises()
     expect(w.findComponent({ name: 'PostDetail' }).exists()).toBe(true)
+  })
+
+  it('帖子详情发出 back 后刷新首页列表', async () => {
+    listPosts.mockResolvedValue([
+      { id: 5, title: 'x', location: 'gulou', event_time: '2026-06-12T18:30:00', image_path: null }
+    ])
+    getPost.mockResolvedValue({
+      id: 5, post_type: 'lost', title: 'x', category: 'daily',
+      image_path: null, description: '', location: 'gulou',
+      event_time: '2026-06-12T18:30:00', contact_type: 'owner_contact',
+      contact_detail: '...', created_at: '2026-06-13T10:00:00',
+      like_count: 0, liked_by_me: false, mine: true
+    })
+    const w = mount(App)
+    await flushPromises()
+    await w.get('[data-testid="post-card"]').trigger('click')
+    await flushPromises()
+    const before = listPosts.mock.calls.length
+    await w.findComponent({ name: 'PostDetail' }).vm.$emit('back')
+    await flushPromises()
+    expect(listPosts.mock.calls.length).toBeGreaterThan(before)
   })
 })

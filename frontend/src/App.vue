@@ -24,6 +24,11 @@ function backHome() {
   selectedPostId.value = null
 }
 
+async function onDetailBack() {
+  backHome()
+  await loadPosts()
+}
+
 function onSelectPost(id) {
   selectedPostId.value = id
   view.value = 'detail'
@@ -80,7 +85,7 @@ watch([activeTab, filters], loadPosts, { deep: true })
     <PostDetail
       v-else-if="view === 'detail' && selectedPostId !== null"
       :post-id="selectedPostId"
-      @back="backHome"
+      @back="onDetailBack"
     />
 
     <TypePicker v-else-if="view === 'picker'"

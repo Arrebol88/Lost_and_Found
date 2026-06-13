@@ -59,3 +59,33 @@ def test_get_post_detail_requires_anon_id(client):
     pid = _create_post(client)["id"]
     r = client.get(f"/api/posts/{pid}")
     assert r.status_code == 400
+
+
+def test_post_has_anon_id_column(client):
+    from app.database import engine
+    cols = {c["name"] for c in inspect(engine).get_columns("posts")}
+    assert "anon_id" in cols
+
+
+def test_post_detail_returns_mine_flag(client):
+    pid = _create_post(client)["id"]
+    r = client.get(f"/api/posts/{pid}", headers={"X-Anon-Id": ANON})
+    assert r.status_code == 200
+    body = r.json()
+    assert "mine" in body
+    assert body["mine"] is False
+
+
+def test_post_detail_mine_true_for_author(client):
+    headers = {"X-Anon-Id": ANON}
+    r = client.post("/api/posts", headers=headers, data={
+        "post_type": "lost", "title": "黑色雨伞", "category": "daily",
+        "description": "长柄", "location": "gulou",
+        "event_time": (datetime.now() - timedelta(hours=1)).isoformat(timespec="minutes"),
+        "contact_type": "owner_contact", "contact_detail": "微信 abc123",
+    })
+    assert r.status_code == 201, r.text
+    pid = r.json()["id"]
+    assert client.get(f"/api/posts/{pid}", headers=headers).json()["mine"] is True
+    other = {"X-Anon-Id": "22222222-2222-2222-2222-222222222222"}
+    assert client.get(f"/api/posts/{pid}", headers=other).json()["mine"] is False

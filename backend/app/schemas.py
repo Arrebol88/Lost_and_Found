@@ -103,6 +103,7 @@ class PostListItem(BaseModel):
 class PostDetailOut(PostOut):
     like_count: int
     liked_by_me: bool
+    mine: bool
 
 
 class LikeToggleOut(BaseModel):

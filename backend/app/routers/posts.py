@@ -32,6 +32,14 @@ def get_anon_id(x_anon_id: Optional[str] = Header(None, alias="X-Anon-Id")) -> s
     return x_anon_id
 
 
+def get_anon_id_optional(x_anon_id: Optional[str] = Header(None, alias="X-Anon-Id")) -> Optional[str]:
+    if x_anon_id is None:
+        return None
+    if not _UUID_RE.match(x_anon_id):
+        raise HTTPException(status_code=400, detail="anon_id: 必须是 UUID")
+    return x_anon_id
+
+
 @router.get("/posts", response_model=List[PostListItem])
 def list_posts(
     post_type: PostType = Query(...),
@@ -74,6 +82,7 @@ def create_post(
     contact_detail: str = Form(...),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
+    anon_id: Optional[str] = Depends(get_anon_id_optional),
 ):
     try:
         parsed_time = datetime.fromisoformat(event_time)
@@ -118,6 +127,7 @@ def create_post(
         event_time=payload.event_time,
         contact_type=payload.contact_type.value,
         contact_detail=payload.contact_detail,
+        anon_id=anon_id,
     )
     try:
         db.add(post)
@@ -162,7 +172,8 @@ def get_post(
         is not None
     )
     base = PostOut.model_validate(post).model_dump()
-    return PostDetailOut(**base, like_count=like_count, liked_by_me=liked)
+    mine = post.anon_id is not None and post.anon_id == anon_id
+    return PostDetailOut(**base, like_count=like_count, liked_by_me=liked, mine=mine)
 
 
 @router.post("/posts/{post_id}/likes", response_model=LikeToggleOut)
@@ -196,3 +207,136 @@ def toggle_like(
         .count()
     )
     return LikeToggleOut(liked=liked, like_count=count)
+
+
+@router.put("/posts/{post_id}", response_model=PostDetailOut)
+def update_post(
+    post_id: int,
+    title: str = Form(...),
+    category: str = Form(...),
+    description: Optional[str] = Form(None),
+    location: str = Form(...),
+    event_time: str = Form(...),
+    contact_type: str = Form(...),
+    contact_detail: str = Form(...),
+    image: Optional[UploadFile] = File(None),
+    remove_image: Optional[str] = Form(None),
+    db: Session = Depends(get_db),
+    anon_id: str = Depends(get_anon_id),
+):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="post not found")
+    if post.anon_id is None or post.anon_id != anon_id:
+        raise HTTPException(status_code=403, detail="not your post")
+
+    try:
+        parsed_time = datetime.fromisoformat(event_time)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="event_time 格式必须是 ISO 8601")
+
+    try:
+        payload = PostCreate(
+            post_type=post.post_type,
+            title=title,
+            category=category,
+            description=description,
+            location=location,
+            event_time=parsed_time,
+            contact_type=contact_type,
+            contact_detail=contact_detail,
+        )
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=_first_error(e))
+
+    new_image_rel: Optional[str] = None
+    if image is not None and image.filename:
+        data = image.file.read()
+        try:
+            new_image_rel = storage.save_image(
+                filename=image.filename,
+                content=data,
+                content_type=image.content_type or "",
+            )
+        except storage.ImageTooLargeError as e:
+            raise HTTPException(status_code=413, detail=str(e))
+        except storage.InvalidImageError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
+    old_image_rel = post.image_path
+    drop_old = False
+    if new_image_rel is not None:
+        post.image_path = new_image_rel
+        drop_old = bool(old_image_rel)
+    elif (remove_image or "").lower() in ("true", "1", "yes"):
+        post.image_path = None
+        drop_old = bool(old_image_rel)
+
+    post.title = payload.title
+    post.category = payload.category.value
+    post.description = payload.description
+    post.location = payload.location.value
+    post.event_time = payload.event_time
+    post.contact_type = payload.contact_type.value
+    post.contact_detail = payload.contact_detail
+
+    try:
+        db.commit()
+        db.refresh(post)
+    except Exception:
+        db.rollback()
+        if new_image_rel:
+            storage.delete_image(new_image_rel)
+        raise HTTPException(status_code=500, detail="数据库写入失败")
+
+    if drop_old and old_image_rel:
+        storage.delete_image(old_image_rel)
+
+    like_count = (
+        db.query(models.PostLike)
+        .filter(models.PostLike.post_id == post_id)
+        .count()
+    )
+    liked = (
+        db.query(models.PostLike)
+        .filter(
+            models.PostLike.post_id == post_id,
+            models.PostLike.anon_id == anon_id,
+        )
+        .first()
+        is not None
+    )
+    base = PostOut.model_validate(post).model_dump()
+    return PostDetailOut(**base, like_count=like_count, liked_by_me=liked, mine=True)
+
+
+@router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    anon_id: str = Depends(get_anon_id),
+):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="post not found")
+    if post.anon_id is None or post.anon_id != anon_id:
+        raise HTTPException(status_code=403, detail="not your post")
+
+    comments = (
+        db.query(models.PostComment)
+        .filter(models.PostComment.post_id == post_id)
+        .all()
+    )
+    comment_images = [c.image_path for c in comments if c.image_path]
+    main_image = post.image_path
+
+    db.query(models.PostComment).filter(models.PostComment.post_id == post_id).delete(synchronize_session=False)
+    db.query(models.PostLike).filter(models.PostLike.post_id == post_id).delete(synchronize_session=False)
+    db.delete(post)
+    db.commit()
+
+    for rel in comment_images:
+        storage.delete_image(rel)
+    if main_image:
+        storage.delete_image(main_image)
+    return None

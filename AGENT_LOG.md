@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-06-13 帖子编辑与删除功能实现（T1–T9）
+
+**触发技能链：** `brainstorming` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`（Trae 缺 Task 工具，主会话内联执行 + 任务间自审）→ 每任务 `test-driven-development` → `verification-before-completion`
+
+**worktree：** `.worktrees/post-edit-delete` ← `feature/post-edit-delete`
+
+| Commit | 任务 | 备注 |
+|---|---|---|
+| `f7892f0` | T1 后端 anon_id 列与 mine 字段 | `posts.anon_id` 列、`PostDetailOut.mine`、`_ensure_column` 兼容历史 DB |
+| `9da1440` | T2 发帖写入 anon_id | 引入 `get_anon_id_optional`，发帖可选 header；新增 mine=True/False 用例 |
+| `304b79e` | T3 PUT /api/posts/{id} | 全字段编辑、403/404、图片替换/移除；`post_type` 不可改 |
+| `f3ac010` | T4 DELETE /api/posts/{id} | 级联删除评论、点赞、主图与评论图 |
+| `5019595` | T5 前端 updatePost / deletePost | axios 多 part PUT 与 DELETE |
+| `dbee3de` | T6 PostEdit 组件 | 表单预填、图片替换/移除、dirty 取消提示 |
+| `27e6a90` | T7 PostDetail 编辑/删除入口 | `mine` 控制按钮、`mode` 切换、`confirm` 二次确认 |
+| `fb1cc0c` | T8 App 删除回首页刷新 | `onDetailBack` 触发 `loadPosts` |
+| 待续 | T9 文档与全量验证 | 更新 README、本日志，运行 backend + frontend + Docker |
+
+**偏离声明：**
+- SPEC §7.1 原本要求“`POST /api/posts` 缺失 X-Anon-Id 一律返回 400”。实现中改为：缺失 header 时仍允许发帖（`anon_id` 写入 NULL），仅“非法 UUID”返回 400；这是为了向后兼容已有未带 header 的发帖测试与历史脏数据；这类历史帖子永远 `mine=False`，编辑/删除路由按非作者拒绝。这个偏离已记录在此处。
+
+**测试总结：**
+- 后端 pytest：`60 passed`（新增 2 + 1 + 6 + 3 = 12 个用例）
+- 前端 Vitest：`38 passed`（新增 1 + 3 + 4 + 1 = 9 个用例）
+
+---
+
 ## 2026-06-13 帖子详情与互动功能实现（T1–T10）
 
 **触发技能链：** `brainstorming` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`（Trae 缺 Task 工具，主会话内联执行 + 任务间自审）→ 每任务 `test-driven-development` → `verification-before-completion`

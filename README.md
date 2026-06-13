@@ -10,6 +10,7 @@
 - 点击卡片进入帖子详情页，展示完整字段（联系方式默认隐藏，点击“查看联系方式”后展开）
 - 详情页点赞按钮（再次点击取消点赞）与点赞数实时刷新
 - 详情页评论：文字必填、图片选填（与发帖共用图片校验），评论作者可删除自己发表的评论
+- 详情页支持作者本人编辑/删除自己的帖子（删除会级联清理评论、点赞与图片）
 - 首页一键发帖（无需登录）
 - 寻物帖 / 寻主帖类型选择
 - 9 类物品分类（电子产品类、个人证件与卡类、箱包与收纳、配饰、衣物、日常小件、办公与学习、运动与户外、个人护理与健康）
@@ -21,7 +22,7 @@
 
 - 后端：FastAPI + SQLAlchemy + SQLite（WAL）
 - 前端：Vue 3 + Vite + axios
-- 测试：pytest + httpx（48 用例）；Vitest + @vue/test-utils（29 用例）
+- 测试：pytest + httpx（60 用例）；Vitest + @vue/test-utils（38 用例）
 - 容器化：Docker + docker-compose
 - CI：GitHub Actions
 
@@ -116,4 +117,6 @@ npm test
 - [帖子展示与筛选 PLAN](docs/superpowers/plans/2026-06-13-post-listing-filters-plan.md)
 - [帖子详情与互动 SPEC](docs/superpowers/specs/2026-06-13-post-detail-interactions-design.md)
 - [帖子详情与互动 PLAN](docs/superpowers/plans/2026-06-13-post-detail-interactions-plan.md)
+- [帖子编辑与删除 SPEC](docs/superpowers/specs/2026-06-13-post-edit-delete-design.md)
+- [帖子编辑与删除 PLAN](docs/superpowers/plans/2026-06-13-post-edit-delete-plan.md)
 - [AGENT_LOG](AGENT_LOG.md)
