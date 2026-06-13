@@ -98,3 +98,24 @@ class PostListItem(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class PostDetailOut(PostOut):
+    like_count: int
+    liked_by_me: bool
+
+
+class LikeToggleOut(BaseModel):
+    liked: bool
+    like_count: int
+
+
+class CommentOut(BaseModel):
+    id: int
+    post_id: int
+    content: str
+    image_path: Optional[str]
+    created_at: datetime
+    mine: bool
+
+    model_config = {"from_attributes": True}
