@@ -59,3 +59,18 @@ def test_get_post_detail_requires_anon_id(client):
     pid = _create_post(client)["id"]
     r = client.get(f"/api/posts/{pid}")
     assert r.status_code == 400
+
+
+def test_post_has_anon_id_column(client):
+    from app.database import engine
+    cols = {c["name"] for c in inspect(engine).get_columns("posts")}
+    assert "anon_id" in cols
+
+
+def test_post_detail_returns_mine_flag(client):
+    pid = _create_post(client)["id"]
+    r = client.get(f"/api/posts/{pid}", headers={"X-Anon-Id": ANON})
+    assert r.status_code == 200
+    body = r.json()
+    assert "mine" in body
+    assert body["mine"] is False

@@ -162,7 +162,8 @@ def get_post(
         is not None
     )
     base = PostOut.model_validate(post).model_dump()
-    return PostDetailOut(**base, like_count=like_count, liked_by_me=liked)
+    mine = post.anon_id is not None and post.anon_id == anon_id
+    return PostDetailOut(**base, like_count=like_count, liked_by_me=liked, mine=mine)
 
 
 @router.post("/posts/{post_id}/likes", response_model=LikeToggleOut)

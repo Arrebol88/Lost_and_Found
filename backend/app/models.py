@@ -20,6 +20,7 @@ class Post(Base):
     contact_type = Column(String(32), nullable=False)
     contact_detail = Column(String(200), nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.now)
+    anon_id = Column(String(36), nullable=True)
 
     __table_args__ = (
         CheckConstraint("post_type IN ('found','lost')", name="ck_post_type"),
