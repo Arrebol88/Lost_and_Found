@@ -37,6 +37,12 @@ describe('PostCard', () => {
     expect(w.find('img').attributes('src')).toBe('/uploads/a.png')
     expect(w.text()).not.toContain('联系方式')
   })
+
+  it('点击卡片 emit select 含 post.id', async () => {
+    const w = mount(PostCard, { props: { post: { id: 7, title: 't', location: 'gulou', event_time: '2026-06-12T18:30:00', image_path: null } } })
+    await w.get('[data-testid="post-card"]').trigger('click')
+    expect(w.emitted().select[0][0]).toBe(7)
+  })
 })
 
 describe('PostList', () => {
