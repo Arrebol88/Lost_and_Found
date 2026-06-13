@@ -1,14 +1,52 @@
-from datetime import datetime
-from typing import Optional
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from datetime import datetime, timedelta
+from typing import List, Optional
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.orm import Session
 from pydantic import ValidationError
 
 from app.database import get_db
 from app import models, storage
-from app.schemas import PostCreate, PostOut
+from app.schemas import (
+    CampusLocation,
+    Category,
+    PostCreate,
+    PostListItem,
+    PostOut,
+    PostType,
+    TimeRange,
+)
 
 router = APIRouter(prefix="/api", tags=["posts"])
+
+
+@router.get("/posts", response_model=List[PostListItem])
+def list_posts(
+    post_type: PostType = Query(...),
+    category: Optional[Category] = Query(None),
+    location: Optional[CampusLocation] = Query(None),
+    time_range: Optional[TimeRange] = Query(None),
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
+    query = db.query(models.Post).filter(models.Post.post_type == post_type.value)
+
+    if category is not None:
+        query = query.filter(models.Post.category == category.value)
+    if location is not None:
+        query = query.filter(models.Post.location == location.value)
+    if time_range is not None:
+        now = datetime.now()
+        if time_range == TimeRange.within_1d:
+            query = query.filter(models.Post.event_time >= now - timedelta(days=1))
+        elif time_range == TimeRange.within_3d:
+            query = query.filter(models.Post.event_time >= now - timedelta(days=3))
+        elif time_range == TimeRange.within_7d:
+            query = query.filter(models.Post.event_time >= now - timedelta(days=7))
+        elif time_range == TimeRange.older_than_7d:
+            query = query.filter(models.Post.event_time < now - timedelta(days=7))
+
+    return query.order_by(models.Post.created_at.desc()).offset(offset).limit(limit).all()
 
 
 @router.post("/posts", response_model=PostOut, status_code=status.HTTP_201_CREATED)

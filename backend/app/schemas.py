@@ -28,6 +28,13 @@ class CampusLocation(str, Enum):
     pukou = "pukou"
 
 
+class TimeRange(str, Enum):
+    within_1d = "within_1d"
+    within_3d = "within_3d"
+    within_7d = "within_7d"
+    older_than_7d = "older_than_7d"
+
+
 class ContactType(str, Enum):
     self_pickup = "self_pickup"
     contact = "contact"
@@ -75,6 +82,19 @@ class PostOut(BaseModel):
     event_time: datetime
     contact_type: ContactType
     contact_detail: str
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class PostListItem(BaseModel):
+    id: int
+    post_type: PostType
+    title: str
+    category: Category
+    image_path: Optional[str]
+    location: CampusLocation
+    event_time: datetime
     created_at: datetime
 
     model_config = {"from_attributes": True}

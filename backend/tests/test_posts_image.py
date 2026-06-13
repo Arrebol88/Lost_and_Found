@@ -52,7 +52,7 @@ def _api_form(**overrides):
         "title": "黑色雨伞",
         "category": "daily",
         "description": "长柄",
-        "location": "逸夫楼 B201",
+        "location": "gulou",
         "event_time": (datetime.now() - timedelta(hours=1)).isoformat(timespec="minutes"),
         "contact_type": "self_pickup",
         "contact_detail": "工作日 8-17 自取",
