@@ -308,3 +308,35 @@ def update_post(
     )
     base = PostOut.model_validate(post).model_dump()
     return PostDetailOut(**base, like_count=like_count, liked_by_me=liked, mine=True)
+
+
+@router.delete("/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(
+    post_id: int,
+    db: Session = Depends(get_db),
+    anon_id: str = Depends(get_anon_id),
+):
+    post = db.query(models.Post).filter(models.Post.id == post_id).first()
+    if post is None:
+        raise HTTPException(status_code=404, detail="post not found")
+    if post.anon_id is None or post.anon_id != anon_id:
+        raise HTTPException(status_code=403, detail="not your post")
+
+    comments = (
+        db.query(models.PostComment)
+        .filter(models.PostComment.post_id == post_id)
+        .all()
+    )
+    comment_images = [c.image_path for c in comments if c.image_path]
+    main_image = post.image_path
+
+    db.query(models.PostComment).filter(models.PostComment.post_id == post_id).delete(synchronize_session=False)
+    db.query(models.PostLike).filter(models.PostLike.post_id == post_id).delete(synchronize_session=False)
+    db.delete(post)
+    db.commit()
+
+    for rel in comment_images:
+        storage.delete_image(rel)
+    if main_image:
+        storage.delete_image(main_image)
+    return None
