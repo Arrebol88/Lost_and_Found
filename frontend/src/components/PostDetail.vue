@@ -3,6 +3,7 @@ import { onMounted, ref } from 'vue'
 import {
   createComment,
   deleteComment,
+  deletePost,
   getPost,
   imageUrl,
   listComments,
@@ -10,6 +11,7 @@ import {
 } from '../api.js'
 import CommentForm from './CommentForm.vue'
 import CommentList from './CommentList.vue'
+import PostEdit from './PostEdit.vue'
 
 const props = defineProps({ postId: { type: Number, required: true } })
 const emit = defineEmits(['back'])
@@ -18,6 +20,7 @@ const post = ref(null)
 const comments = ref([])
 const showContact = ref(false)
 const error = ref('')
+const mode = ref('view')
 
 const LOCATION_TEXT = {
   gulou: '鼓楼校区',
@@ -94,6 +97,24 @@ async function onDeleteComment(id) {
   }
 }
 
+function onEdit() { mode.value = 'edit' }
+function onCancelEdit() { mode.value = 'view' }
+function onSaved(updated) {
+  post.value = updated
+  mode.value = 'view'
+}
+async function onDeletePost() {
+  if (typeof window !== 'undefined' && typeof window.confirm === 'function') {
+    if (!window.confirm('确认删除该帖子？此操作不可恢复')) return
+  }
+  try {
+    await deletePost(props.postId)
+    emit('back')
+  } catch (e) {
+    error.value = '删除失败，请稍后再试'
+  }
+}
+
 onMounted(loadAll)
 </script>
 
@@ -101,10 +122,15 @@ onMounted(loadAll)
   <section class="detail">
     <header class="bar">
       <button class="back" @click="emit('back')">返回</button>
+      <div v-if="post && post.mine && mode === 'view'" class="actions">
+        <button data-testid="post-edit" class="ghost" @click="onEdit">编辑</button>
+        <button data-testid="post-delete" class="danger" @click="onDeletePost">删除</button>
+      </div>
     </header>
 
     <p v-if="error" class="error">{{ error }}</p>
 
+    <template v-if="mode === 'view'">
     <article v-if="post" class="post">
       <h2>{{ post.title }}</h2>
       <p class="meta">
@@ -140,12 +166,18 @@ onMounted(loadAll)
       <CommentForm @submit="onSubmitComment" />
       <CommentList :items="comments" @delete="onDeleteComment" />
     </section>
+    </template>
+    <PostEdit v-else-if="post" :post="post" @saved="onSaved" @cancel="onCancelEdit" />
   </section>
 </template>
 
 <style scoped>
 .detail { max-width: 720px; margin: 0 auto; padding: 16px; }
 .bar { display: flex; margin-bottom: 12px; }
+.bar { justify-content: space-between; align-items: center; }
+.actions { display: flex; gap: 8px; }
+.ghost { background: transparent; border: 1px solid #cbd5e1; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
+.danger { background: #dc2626; color: white; border: 0; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
 .back { background: transparent; border: 1px solid #cbd5e1; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
 .error { color: #dc2626; }
 .post { background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
