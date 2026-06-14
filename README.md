@@ -4,14 +4,16 @@
 
 ## 功能
 
-- 首页默认展示“寻物”帖子，底部导航可切换“寻物 / 寻主”
-- 首页支持按物品种类、丢失/捡到时间、校区地点筛选帖子
-- 帖子卡片展示标题、校区地点、丢失/捡到时间、首图缩略图（如有）
-- 点击卡片进入帖子详情页，展示完整字段（联系方式默认隐藏，点击“查看联系方式”后展开）
+- 用户名 + 密码注册 / 登录（bcrypt 哈希、JWT 鉴权、7 天 token）
+- 顶部用户区显示当前用户与登出；未登录时显示登录入口
+- 首页 tabs：寻物 / 寻主 / 我的帖子（"我的帖子" 必须登录）
+- 首页默认展示寻物帖子，可按物品种类、丢失/捡到时间、校区地点筛选
+- 帖子卡片展示标题、校区地点、丢失/捡到时间、首图缩略图（如有）、作者用户名
+- 点击卡片进入帖子详情页，展示完整字段（联系方式默认隐藏，点击"查看联系方式"后展开）
 - 详情页点赞按钮（再次点击取消点赞）与点赞数实时刷新
 - 详情页评论：文字必填、图片选填（与发帖共用图片校验），评论作者可删除自己发表的评论
 - 详情页支持作者本人编辑/删除自己的帖子（删除会级联清理评论、点赞与图片）
-- 首页一键发帖（无需登录）
+- 写操作（发帖 / 点赞 / 评论 / 编辑 / 删除）需登录；未登录会弹出登录/注册弹窗
 - 寻物帖 / 寻主帖类型选择
 - 9 类物品分类（电子产品类、个人证件与卡类、箱包与收纳、配饰、衣物、日常小件、办公与学习、运动与户外、个人护理与健康）
 - 丢失/捡到地点限定为鼓楼校区、仙林校区、苏州校区、浦口校区
@@ -22,7 +24,7 @@
 
 - 后端：FastAPI + SQLAlchemy + SQLite（WAL）
 - 前端：Vue 3 + Vite + axios
-- 测试：pytest + httpx（60 用例）；Vitest + @vue/test-utils（38 用例）
+- 测试：pytest + httpx（74 用例）；Vitest + @vue/test-utils（46 用例）
 - 容器化：Docker + docker-compose
 - CI：GitHub Actions
 
@@ -108,6 +110,9 @@ npm test
 |------|--------|------|
 | `NJU_DB_URL` | `sqlite:///./nju_lostfound.db` | SQLite 连接串 |
 | `NJU_UPLOAD_DIR` | `./uploads` | 图片存储目录 |
+| `JWT_SECRET` | `dev-secret-change-me` | JWT HS256 签名密钥（**生产必须覆盖**） |
+
+> ⚠️ 本期升级会**清空旧版基于 `anon_id` 的帖子/点赞/评论数据与上传图片**，仅在首次启动检测到旧 schema 时执行一次。如有重要数据请提前导出。
 
 ## 文档
 
@@ -121,5 +126,7 @@ npm test
 - [帖子编辑与删除 PLAN](docs/superpowers/plans/2026-06-13-post-edit-delete-plan.md)
 - [视觉重构 SPEC](docs/superpowers/specs/2026-06-13-open-design-visual-refresh.md)
 - [视觉重构 PLAN](docs/superpowers/plans/2026-06-13-open-design-visual-refresh-plan.md)
+- [用户系统 SPEC](docs/superpowers/specs/2026-06-13-user-auth-and-my-posts.md)
+- [用户系统 PLAN](docs/superpowers/plans/2026-06-13-user-auth-and-my-posts-plan.md)
 - [品牌契约 DESIGN.md](DESIGN.md)（受 Open Design 方法论启发）
 - [AGENT_LOG](AGENT_LOG.md)

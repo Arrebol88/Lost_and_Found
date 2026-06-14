@@ -1,12 +1,13 @@
-import re
 from datetime import datetime, timedelta
 from typing import List, Optional
-from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile, status
-from sqlalchemy.orm import Session
-from pydantic import ValidationError
 
-from app.database import get_db
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from pydantic import ValidationError
+from sqlalchemy.orm import Session
+
 from app import models, storage
+from app.auth.deps import get_current_user, get_current_user_optional
+from app.database import get_db
 from app.schemas import (
     CampusLocation,
     Category,
@@ -21,36 +22,44 @@ from app.schemas import (
 
 router = APIRouter(prefix="/api", tags=["posts"])
 
-_UUID_RE = re.compile(
-    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
-)
 
-
-def get_anon_id(x_anon_id: Optional[str] = Header(None, alias="X-Anon-Id")) -> str:
-    if not x_anon_id or not _UUID_RE.match(x_anon_id):
-        raise HTTPException(status_code=400, detail="anon_id: 必须是 UUID")
-    return x_anon_id
-
-
-def get_anon_id_optional(x_anon_id: Optional[str] = Header(None, alias="X-Anon-Id")) -> Optional[str]:
-    if x_anon_id is None:
-        return None
-    if not _UUID_RE.match(x_anon_id):
-        raise HTTPException(status_code=400, detail="anon_id: 必须是 UUID")
-    return x_anon_id
+def _post_to_out(post: models.Post) -> dict:
+    return {
+        "id": post.id,
+        "post_type": post.post_type,
+        "title": post.title,
+        "category": post.category,
+        "image_path": post.image_path,
+        "description": post.description,
+        "location": post.location,
+        "event_time": post.event_time,
+        "contact_type": post.contact_type,
+        "contact_detail": post.contact_detail,
+        "created_at": post.created_at,
+        "author_username": post.author.username if post.author else "",
+    }
 
 
 @router.get("/posts", response_model=List[PostListItem])
 def list_posts(
-    post_type: PostType = Query(...),
+    post_type: Optional[PostType] = Query(None),
     category: Optional[Category] = Query(None),
     location: Optional[CampusLocation] = Query(None),
     time_range: Optional[TimeRange] = Query(None),
+    mine: Optional[bool] = Query(False),
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
+    current: Optional[models.User] = Depends(get_current_user_optional),
 ):
-    query = db.query(models.Post).filter(models.Post.post_type == post_type.value)
+    if mine and current is None:
+        raise HTTPException(status_code=401, detail="未登录")
+
+    query = db.query(models.Post)
+    if mine and current is not None:
+        query = query.filter(models.Post.user_id == current.id)
+    elif post_type is not None:
+        query = query.filter(models.Post.post_type == post_type.value)
 
     if category is not None:
         query = query.filter(models.Post.category == category.value)
@@ -67,7 +76,16 @@ def list_posts(
         elif time_range == TimeRange.older_than_7d:
             query = query.filter(models.Post.event_time < now - timedelta(days=7))
 
-    return query.order_by(models.Post.created_at.desc()).offset(offset).limit(limit).all()
+    items = query.order_by(models.Post.created_at.desc()).offset(offset).limit(limit).all()
+    return [
+        PostListItem.model_validate(
+            {
+                **{k: getattr(p, k) for k in PostListItem.model_fields if k != "author_username"},
+                "author_username": p.author.username if p.author else "",
+            }
+        )
+        for p in items
+    ]
 
 
 @router.post("/posts", response_model=PostOut, status_code=status.HTTP_201_CREATED)
@@ -82,7 +100,7 @@ def create_post(
     contact_detail: str = Form(...),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
-    anon_id: Optional[str] = Depends(get_anon_id_optional),
+    current: models.User = Depends(get_current_user),
 ):
     try:
         parsed_time = datetime.fromisoformat(event_time)
@@ -127,7 +145,7 @@ def create_post(
         event_time=payload.event_time,
         contact_type=payload.contact_type.value,
         contact_detail=payload.contact_detail,
-        anon_id=anon_id,
+        user_id=current.id,
     )
     try:
         db.add(post)
@@ -139,7 +157,7 @@ def create_post(
             storage.delete_image(image_rel)
         raise HTTPException(status_code=500, detail="数据库写入失败")
 
-    return post
+    return _post_to_out(post)
 
 
 def _first_error(e: ValidationError) -> str:
@@ -152,7 +170,7 @@ def _first_error(e: ValidationError) -> str:
 def get_post(
     post_id: int,
     db: Session = Depends(get_db),
-    anon_id: str = Depends(get_anon_id),
+    current: Optional[models.User] = Depends(get_current_user_optional),
 ):
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if post is None:
@@ -162,17 +180,20 @@ def get_post(
         .filter(models.PostLike.post_id == post_id)
         .count()
     )
-    liked = (
-        db.query(models.PostLike)
-        .filter(
-            models.PostLike.post_id == post_id,
-            models.PostLike.anon_id == anon_id,
+    liked = False
+    mine = False
+    if current is not None:
+        liked = (
+            db.query(models.PostLike)
+            .filter(
+                models.PostLike.post_id == post_id,
+                models.PostLike.user_id == current.id,
+            )
+            .first()
+            is not None
         )
-        .first()
-        is not None
-    )
-    base = PostOut.model_validate(post).model_dump()
-    mine = post.anon_id is not None and post.anon_id == anon_id
+        mine = post.user_id == current.id
+    base = _post_to_out(post)
     return PostDetailOut(**base, like_count=like_count, liked_by_me=liked, mine=mine)
 
 
@@ -180,7 +201,7 @@ def get_post(
 def toggle_like(
     post_id: int,
     db: Session = Depends(get_db),
-    anon_id: str = Depends(get_anon_id),
+    current: models.User = Depends(get_current_user),
 ):
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if post is None:
@@ -189,12 +210,12 @@ def toggle_like(
         db.query(models.PostLike)
         .filter(
             models.PostLike.post_id == post_id,
-            models.PostLike.anon_id == anon_id,
+            models.PostLike.user_id == current.id,
         )
         .first()
     )
     if existing is None:
-        db.add(models.PostLike(post_id=post_id, anon_id=anon_id))
+        db.add(models.PostLike(post_id=post_id, user_id=current.id))
         db.commit()
         liked = True
     else:
@@ -222,12 +243,12 @@ def update_post(
     image: Optional[UploadFile] = File(None),
     remove_image: Optional[str] = Form(None),
     db: Session = Depends(get_db),
-    anon_id: str = Depends(get_anon_id),
+    current: models.User = Depends(get_current_user),
 ):
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if post is None:
         raise HTTPException(status_code=404, detail="post not found")
-    if post.anon_id is None or post.anon_id != anon_id:
+    if post.user_id != current.id:
         raise HTTPException(status_code=403, detail="not your post")
 
     try:
@@ -301,12 +322,12 @@ def update_post(
         db.query(models.PostLike)
         .filter(
             models.PostLike.post_id == post_id,
-            models.PostLike.anon_id == anon_id,
+            models.PostLike.user_id == current.id,
         )
         .first()
         is not None
     )
-    base = PostOut.model_validate(post).model_dump()
+    base = _post_to_out(post)
     return PostDetailOut(**base, like_count=like_count, liked_by_me=liked, mine=True)
 
 
@@ -314,12 +335,12 @@ def update_post(
 def delete_post(
     post_id: int,
     db: Session = Depends(get_db),
-    anon_id: str = Depends(get_anon_id),
+    current: models.User = Depends(get_current_user),
 ):
     post = db.query(models.Post).filter(models.Post.id == post_id).first()
     if post is None:
         raise HTTPException(status_code=404, detail="post not found")
-    if post.anon_id is None or post.anon_id != anon_id:
+    if post.user_id != current.id:
         raise HTTPException(status_code=403, detail="not your post")
 
     comments = (

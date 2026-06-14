@@ -3,7 +3,17 @@ from sqlalchemy import (
     Column, Integer, String, Text, DateTime, CheckConstraint,
     ForeignKey, UniqueConstraint, Index,
 )
+from sqlalchemy.orm import relationship
 from app.database import Base
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(32), nullable=False, unique=True)
+    password_hash = Column(String(128), nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
 
 
 class Post(Base):
@@ -20,7 +30,9 @@ class Post(Base):
     contact_type = Column(String(32), nullable=False)
     contact_detail = Column(String(200), nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.now)
-    anon_id = Column(String(36), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    author = relationship("User", lazy="joined")
 
     __table_args__ = (
         CheckConstraint("post_type IN ('found','lost')", name="ck_post_type"),
@@ -50,11 +62,11 @@ class PostLike(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
-    anon_id = Column(String(36), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, nullable=False, default=datetime.now)
 
     __table_args__ = (
-        UniqueConstraint("post_id", "anon_id", name="uq_post_likes_post_anon"),
+        UniqueConstraint("post_id", "user_id", name="uq_post_likes_post_user"),
     )
 
 
@@ -63,10 +75,12 @@ class PostComment(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     post_id = Column(Integer, ForeignKey("posts.id"), nullable=False)
-    anon_id = Column(String(36), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(String(200), nullable=False)
     image_path = Column(Text, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.now)
+
+    author = relationship("User", lazy="joined")
 
     __table_args__ = (
         Index("ix_post_comments_post_created", "post_id", "created_at"),

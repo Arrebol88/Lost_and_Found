@@ -3,22 +3,23 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
-from app.database import get_db
 from app import models, storage
-from app.routers.posts import get_anon_id
+from app.auth.deps import get_current_user, get_current_user_optional
+from app.database import get_db
 from app.schemas import CommentOut
 
 router = APIRouter(prefix="/api", tags=["comments"])
 
 
-def _to_out(c: models.PostComment, anon_id: str) -> CommentOut:
+def _to_out(c: models.PostComment, current: Optional[models.User]) -> CommentOut:
     return CommentOut(
         id=c.id,
         post_id=c.post_id,
         content=c.content,
         image_path=c.image_path,
         created_at=c.created_at,
-        mine=(c.anon_id == anon_id),
+        mine=(current is not None and c.user_id == current.id),
+        author_username=c.author.username if c.author else "",
     )
 
 
@@ -26,7 +27,7 @@ def _to_out(c: models.PostComment, anon_id: str) -> CommentOut:
 def list_comments(
     post_id: int,
     db: Session = Depends(get_db),
-    anon_id: str = Depends(get_anon_id),
+    current: Optional[models.User] = Depends(get_current_user_optional),
 ):
     if db.query(models.Post).filter(models.Post.id == post_id).first() is None:
         raise HTTPException(status_code=404, detail="post not found")
@@ -39,7 +40,7 @@ def list_comments(
         )
         .all()
     )
-    return [_to_out(r, anon_id) for r in rows]
+    return [_to_out(r, current) for r in rows]
 
 
 @router.post(
@@ -52,7 +53,7 @@ def create_comment(
     content: str = Form(...),
     image: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
-    anon_id: str = Depends(get_anon_id),
+    current: models.User = Depends(get_current_user),
 ):
     if db.query(models.Post).filter(models.Post.id == post_id).first() is None:
         raise HTTPException(status_code=404, detail="post not found")
@@ -76,7 +77,7 @@ def create_comment(
 
     row = models.PostComment(
         post_id=post_id,
-        anon_id=anon_id,
+        user_id=current.id,
         content=text,
         image_path=image_rel,
     )
@@ -89,14 +90,14 @@ def create_comment(
         if image_rel:
             storage.delete_image(image_rel)
         raise HTTPException(status_code=500, detail="数据库写入失败")
-    return _to_out(row, anon_id)
+    return _to_out(row, current)
 
 
 @router.delete("/comments/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_comment(
     comment_id: int,
     db: Session = Depends(get_db),
-    anon_id: str = Depends(get_anon_id),
+    current: models.User = Depends(get_current_user),
 ):
     row = (
         db.query(models.PostComment)
@@ -105,7 +106,7 @@ def delete_comment(
     )
     if row is None:
         raise HTTPException(status_code=404, detail="comment not found")
-    if row.anon_id != anon_id:
+    if row.user_id != current.id:
         raise HTTPException(status_code=403, detail="not your comment")
     rel = row.image_path
     db.delete(row)

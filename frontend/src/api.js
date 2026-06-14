@@ -1,31 +1,43 @@
 import axios from 'axios'
+import { getToken, logout } from './auth.js'
 
 // 开发态走 vite 代理（baseURL 空），生产态浏览器直接访问后端 8000
 const baseURL = import.meta.env.PROD ? 'http://localhost:8000' : ''
 const http = axios.create({ baseURL })
 
-export function ensureAnonId() {
-  let id = localStorage.getItem('nju_anon_id')
-  if (!id) {
-    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-      id = crypto.randomUUID()
-    } else {
-      id = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-        const r = (Math.random() * 16) | 0
-        const v = c === 'x' ? r : (r & 0x3) | 0x8
-        return v.toString(16)
-      })
-    }
-    localStorage.setItem('nju_anon_id', id)
-  }
-  return id
-}
-
 http.interceptors.request.use((cfg) => {
   cfg.headers = cfg.headers || {}
-  cfg.headers['X-Anon-Id'] = ensureAnonId()
+  const token = getToken()
+  if (token) {
+    cfg.headers['Authorization'] = `Bearer ${token}`
+  }
   return cfg
 })
+
+http.interceptors.response.use(
+  (r) => r,
+  (err) => {
+    if (err && err.response && err.response.status === 401) {
+      logout()
+    }
+    return Promise.reject(err)
+  }
+)
+
+export async function register(username, password) {
+  const r = await http.post('/api/auth/register', { username, password })
+  return r.data
+}
+
+export async function login(username, password) {
+  const r = await http.post('/api/auth/login', { username, password })
+  return r.data
+}
+
+export async function fetchMe() {
+  const r = await http.get('/api/auth/me')
+  return r.data
+}
 
 export async function createPost(form) {
   const fd = new FormData()
@@ -41,7 +53,7 @@ export async function createPost(form) {
 
 export async function listPosts(filters) {
   const params = Object.fromEntries(
-    Object.entries(filters).filter(([, v]) => v !== '' && v !== null && v !== undefined)
+    Object.entries(filters).filter(([, v]) => v !== '' && v !== null && v !== undefined && v !== false)
   )
   const r = await http.get('/api/posts', { params })
   return r.data

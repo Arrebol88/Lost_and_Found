@@ -16,8 +16,26 @@ vi.mock('../src/api.js', () => ({
   imageUrl: p => `/${p}`
 }))
 
+vi.mock('../src/auth.js', async () => {
+  const { ref } = await import('vue')
+  const currentUser = ref(null)
+  return {
+    currentUser,
+    setSession: (token, user) => { currentUser.value = user },
+    logout: () => { currentUser.value = null },
+    getToken: () => null,
+    isAuthed: () => !!currentUser.value,
+    __setUser: (u) => { currentUser.value = u },
+  }
+})
+
+import * as authMock from '../src/auth.js'
+function setMockUser(u) { authMock.__setUser ? authMock.__setUser(u) : (authMock.currentUser.value = u) }
+
 describe('App homepage listing', () => {
   beforeEach(() => {
+    setMockUser(null)
+    listPosts.mockReset()
     listPosts.mockResolvedValue([])
     getPost.mockReset()
     listComments.mockResolvedValue([])
@@ -83,5 +101,33 @@ describe('App homepage listing', () => {
     await w.findComponent({ name: 'PostDetail' }).vm.$emit('back')
     await flushPromises()
     expect(listPosts.mock.calls.length).toBeGreaterThan(before)
+  })
+
+  it('未登录点击 我要发帖 弹出 AuthDialog', async () => {
+    const w = mount(App)
+    await flushPromises()
+    await w.get('[data-testid="btn-create"]').trigger('click')
+    expect(w.findComponent({ name: 'AuthDialog' }).exists()).toBe(true)
+  })
+
+  it('未登录切到 我的帖子 显示登录提示，不调用 listPosts(mine)', async () => {
+    const w = mount(App)
+    await flushPromises()
+    listPosts.mockClear()
+    await w.get('[data-testid="tab-mine"]').trigger('click')
+    await flushPromises()
+    expect(w.find('[data-testid="mine-need-login"]').exists()).toBe(true)
+    const mineCalls = listPosts.mock.calls.filter(c => c[0] && c[0].mine === true)
+    expect(mineCalls.length).toBe(0)
+  })
+
+  it('登录后切到 我的帖子 调 listPosts mine=true', async () => {
+    setMockUser({ id: 1, username: 'alice' })
+    const w = mount(App)
+    await flushPromises()
+    listPosts.mockClear()
+    await w.get('[data-testid="tab-mine"]').trigger('click')
+    await flushPromises()
+    expect(listPosts).toHaveBeenLastCalledWith(expect.objectContaining({ mine: true }))
   })
 })

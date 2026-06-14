@@ -4,6 +4,28 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
+class RegisterIn(BaseModel):
+    username: str = Field(..., min_length=3, max_length=32, pattern=r"^[\w\u4e00-\u9fa5]+$")
+    password: str = Field(..., min_length=6, max_length=128)
+
+
+class LoginIn(BaseModel):
+    username: str
+    password: str
+
+
+class UserOut(BaseModel):
+    id: int
+    username: str
+
+    model_config = {"from_attributes": True}
+
+
+class TokenOut(BaseModel):
+    token: str
+    user: UserOut
+
+
 class PostType(str, Enum):
     found = "found"
     lost = "lost"
@@ -83,6 +105,7 @@ class PostOut(BaseModel):
     contact_type: ContactType
     contact_detail: str
     created_at: datetime
+    author_username: str
 
     model_config = {"from_attributes": True}
 
@@ -96,6 +119,7 @@ class PostListItem(BaseModel):
     location: CampusLocation
     event_time: datetime
     created_at: datetime
+    author_username: str
 
     model_config = {"from_attributes": True}
 
@@ -118,5 +142,6 @@ class CommentOut(BaseModel):
     image_path: Optional[str]
     created_at: datetime
     mine: bool
+    author_username: str
 
     model_config = {"from_attributes": True}

@@ -12,9 +12,10 @@ import {
 import CommentForm from './CommentForm.vue'
 import CommentList from './CommentList.vue'
 import PostEdit from './PostEdit.vue'
+import { currentUser } from '../auth.js'
 
 const props = defineProps({ postId: { type: Number, required: true } })
-const emit = defineEmits(['back'])
+const emit = defineEmits(['back', 'require-auth'])
 
 const post = ref(null)
 const comments = ref([])
@@ -67,6 +68,7 @@ async function loadAll() {
 
 async function onLike() {
   if (!post.value) return
+  if (!currentUser.value) { emit('require-auth'); return }
   try {
     const r = await toggleLike(props.postId)
     post.value.liked_by_me = r.liked
@@ -77,6 +79,7 @@ async function onLike() {
 }
 
 async function onSubmitComment(payload) {
+  if (!currentUser.value) { emit('require-auth'); return }
   try {
     await createComment(props.postId, payload)
     comments.value = await listComments(props.postId)
@@ -140,6 +143,10 @@ onMounted(loadAll)
         <span>{{ LOCATION_TEXT[post.location] || post.location }}</span>
         <span class="dot">·</span>
         <span>{{ fmt(post.event_time) }}</span>
+        <template v-if="post.author_username">
+          <span class="dot">·</span>
+          <span class="author" data-testid="post-author">作者：{{ post.author_username }}</span>
+        </template>
       </p>
       <img v-if="post.image_path" :src="imageUrl(post.image_path)" alt="物品图片" class="hero" />
       <p v-if="post.description" class="desc">{{ post.description }}</p>

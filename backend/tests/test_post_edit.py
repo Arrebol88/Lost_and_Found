@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 import os
 
-ANON_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-ANON_B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 PNG = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
     b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\xcf"
@@ -41,10 +39,9 @@ def _form(**overrides):
     return base
 
 
-def test_update_post_full_fields(client):
-    h = {"X-Anon-Id": ANON_A}
-    pid = _create(client, h)["id"]
-    r = client.put(f"/api/posts/{pid}", headers=h, data=_form())
+def test_update_post_full_fields(client, headers):
+    pid = _create(client, headers)["id"]
+    r = client.put(f"/api/posts/{pid}", headers=headers, data=_form())
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["title"] == "新标题"
@@ -53,24 +50,25 @@ def test_update_post_full_fields(client):
     assert body["mine"] is True
 
 
-def test_update_post_forbidden_for_other_anon(client):
-    pid = _create(client, {"X-Anon-Id": ANON_A})["id"]
-    r = client.put(f"/api/posts/{pid}", headers={"X-Anon-Id": ANON_B}, data=_form())
+def test_update_post_forbidden_for_other_user(client, auth):
+    h_alice = auth("alice")
+    h_bob = auth("bob")
+    pid = _create(client, h_alice)["id"]
+    r = client.put(f"/api/posts/{pid}", headers=h_bob, data=_form())
     assert r.status_code == 403
 
 
-def test_update_post_404_for_missing(client):
-    r = client.put("/api/posts/9999", headers={"X-Anon-Id": ANON_A}, data=_form())
+def test_update_post_404_for_missing(client, headers):
+    r = client.put("/api/posts/9999", headers=headers, data=_form())
     assert r.status_code == 404
 
 
-def test_update_post_replace_image(client):
-    h = {"X-Anon-Id": ANON_A}
-    body = _create(client, h)
+def test_update_post_replace_image(client, headers):
+    body = _create(client, headers)
     pid = body["id"]
     r = client.put(
         f"/api/posts/{pid}",
-        headers=h,
+        headers=headers,
         data=_form(),
         files={"image": ("a.png", PNG, "image/png")},
     )
@@ -80,11 +78,10 @@ def test_update_post_replace_image(client):
     assert new_path.endswith(".png")
 
 
-def test_update_post_remove_image(client):
-    h = {"X-Anon-Id": ANON_A}
+def test_update_post_remove_image(client, headers):
     pid = client.post(
         "/api/posts",
-        headers=h,
+        headers=headers,
         data={
             "post_type": "lost",
             "title": "黑色雨伞",
@@ -98,12 +95,12 @@ def test_update_post_remove_image(client):
         files={"image": ("a.png", PNG, "image/png")},
     ).json()["id"]
     upload_dir = os.environ["NJU_UPLOAD_DIR"]
-    detail = client.get(f"/api/posts/{pid}", headers=h).json()
+    detail = client.get(f"/api/posts/{pid}", headers=headers).json()
     abs_p = os.path.join(upload_dir, detail["image_path"].split("uploads/", 1)[1])
     assert os.path.exists(abs_p)
     r = client.put(
         f"/api/posts/{pid}",
-        headers=h,
+        headers=headers,
         data={**_form(), "remove_image": "true"},
     )
     assert r.status_code == 200
@@ -111,12 +108,11 @@ def test_update_post_remove_image(client):
     assert not os.path.exists(abs_p)
 
 
-def test_update_post_rejects_post_type_change(client):
-    h = {"X-Anon-Id": ANON_A}
-    pid = _create(client, h)["id"]
+def test_update_post_rejects_post_type_change(client, headers):
+    pid = _create(client, headers)["id"]
     r = client.put(
         f"/api/posts/{pid}",
-        headers=h,
+        headers=headers,
         data={**_form(), "post_type": "found"},
     )
     assert r.status_code == 200
