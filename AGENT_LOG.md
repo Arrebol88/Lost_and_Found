@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-06-13 用户注册/登录 + 我的帖子（T1–T11）
+
+**触发技能链：** `brainstorming` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`（Trae 无真子代理，主会话内联执行 + 任务间自审）→ 每任务 `test-driven-development`（红→绿）→ `verification-before-completion`
+
+**worktree：** `.worktrees/user-auth` ← `feature/user-auth`
+
+**核心决策：**
+
+- 鉴权采用 JWT (HS256, 7d)，与原 `X-Anon-Id` 头模式同构；前端 axios 拦截器统一注入 `Authorization`、401 自动 logout。
+- 历史 anon_id 数据 **一次性清空**：`database.init_db()` 启动时检测旧 `posts.anon_id` 列，存在则 `DROP TABLE` + 清 uploads。
+- 用户名规则：3–32 位、允许字母数字下划线汉字；密码 ≥ 6 位；用户名查重不区分大小写。
+- 未登录可浏览首页与详情；写操作（发帖 / 点赞 / 评论 / 编辑 / 删除）触发登录弹窗；"我的帖子" tab 未登录显示占位。
+
+**偏离声明：**
+
+- 未运行 Open Design CLI/MCP；前端鉴权弹窗、Hero 用户区、空状态均按现有 `tokens.css` 自行实现（与上一期视觉重构方法论一致）。
+- 用 `vi.mock(..., async () => { const { ref } = await import('vue'); ... })` 让前端测试可在 hoist 后引用 reactive ref；这是当前 Vitest 的官方模式。
+
+**关键测试结果：**
+
+| 模块 | 用例数 | 结果 |
+|---|---|---|
+| 后端 pytest | 60 → 74 | passed（新增 14：auth + mine + author_username） |
+| 前端 Vitest | 38 → 46 | passed（新增 8：auth.js + AuthDialog + App 登录拦截 + mine tab） |
+| `npm run build` | — | 成功 |
+
+---
+
 ## 2026-06-13 Open Design 风格视觉重构（T1–T10）
 
 **触发技能链：** `brainstorming` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`（Trae 缺 Task 工具，主会话内联执行 + 任务间自审）→ 每任务 `test-driven-development`（行为测试不变情况下视觉改造也按红/绿节奏跑既有 vitest）→ `verification-before-completion`

@@ -17,7 +17,11 @@ function fmt(t) {
       <div class="body">
         <p class="content">{{ c.content }}</p>
         <img v-if="c.image_path" :src="imageUrl(c.image_path)" alt="评论图片" class="thumb" />
-        <p class="time">{{ fmt(c.created_at) }}</p>
+        <p class="time">
+          <span v-if="c.author_username" class="author">{{ c.author_username }}</span>
+          <span v-if="c.author_username" class="dot">·</span>
+          <span>{{ fmt(c.created_at) }}</span>
+        </p>
       </div>
       <button
         v-if="c.mine"
@@ -36,7 +40,9 @@ function fmt(t) {
 .body { min-width: 0; flex: 1; }
 .content { margin: 0 0 var(--sp-2); color: var(--text-2); white-space: pre-wrap; word-break: break-word; line-height: 1.7; }
 .thumb { width: 56px; height: 56px; border-radius: var(--radius-sm); object-fit: cover; }
-.time { margin: var(--sp-1) 0 0; font-size: var(--fz-meta); color: var(--text-3); }
+.time { margin: var(--sp-1) 0 0; font-size: var(--fz-meta); color: var(--text-3); display: inline-flex; gap: var(--sp-1); }
+.time .author { color: var(--text-2); }
+.time .dot { color: var(--text-3); }
 .del { color: var(--text-3); background: transparent; border: 0; cursor: pointer; align-self: flex-start; padding: var(--sp-1) var(--sp-2); font: inherit; font-size: var(--fz-mini); opacity: 0; transition: opacity 160ms; }
 .item:hover .del { opacity: 1; }
 .del:hover { color: var(--danger); }

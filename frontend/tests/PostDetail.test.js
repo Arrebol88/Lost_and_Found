@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
 import { flushPromises, mount } from '@vue/test-utils'
 import PostDetail from '../src/components/PostDetail.vue'
 import { getPost, toggleLike, listComments, createComment, deleteComment } from '../src/api.js'
@@ -9,7 +10,17 @@ vi.mock('../src/api.js', () => ({
   listComments: vi.fn(),
   createComment: vi.fn(),
   deleteComment: vi.fn(),
+  deletePost: vi.fn(),
+  updatePost: vi.fn(),
   imageUrl: p => `/${p}`
+}))
+
+vi.mock('../src/auth.js', () => ({
+  currentUser: ref({ id: 1, username: 'tester' }),
+  setSession: vi.fn(),
+  logout: vi.fn(),
+  getToken: () => 'tk',
+  isAuthed: () => true,
 }))
 
 const POST = {
