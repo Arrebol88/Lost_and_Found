@@ -57,8 +57,9 @@ function update(key, value) {
 </template>
 
 <style scoped>
-.filters { display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px; }
-.filters label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #475569; }
-.filters select { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; background: white; }
-@media (min-width: 560px) { .filters { grid-template-columns: repeat(3, 1fr); } }
+.filters { display: flex; flex-wrap: wrap; gap: var(--sp-3) var(--sp-4); padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-4); background: var(--surface-2); border-radius: var(--radius-md); }
+.filters label { display: inline-flex; align-items: center; gap: var(--sp-2); font-size: var(--fz-meta); color: var(--text-2); }
+.filters select { background: var(--surface); color: var(--text-1); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: var(--sp-1) var(--sp-3); font: inherit; font-size: var(--fz-meta); cursor: pointer; }
+.filters select:hover { border-color: var(--text-3); }
+.filters select:focus { border-color: var(--accent); outline: none; }
 </style>
