@@ -31,20 +31,30 @@ function onActivate() {
     @click="onActivate"
     @keydown.enter="onActivate"
   >
-    <img v-if="post.image_path" class="thumb" :src="imageUrl(post.image_path)" alt="物品图片" />
-    <div class="content">
-      <h3>{{ post.title }}</h3>
-      <p>{{ LOCATION_TEXT[post.location] || post.location }}</p>
-      <p>{{ formatTime(post.event_time) }}</p>
+    <div class="cover">
+      <img v-if="post.image_path" :src="imageUrl(post.image_path)" alt="物品图片" />
+      <span v-else class="placeholder">无图片</span>
+    </div>
+    <div class="body">
+      <h3 class="title">{{ post.title }}</h3>
+      <div class="meta">
+        <span>{{ LOCATION_TEXT[post.location] || post.location }}</span>
+        <span class="dot">·</span>
+        <span>{{ formatTime(post.event_time) }}</span>
+      </div>
     </div>
   </article>
 </template>
 
 <style scoped>
-.card { display: flex; gap: 12px; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; background: white; cursor: pointer; }
-.card:hover { border-color: #93c5fd; }
-.thumb { width: 72px; height: 72px; object-fit: cover; border-radius: 8px; flex: 0 0 auto; }
-.content { min-width: 0; }
-h3 { margin: 0 0 8px; font-size: 16px; color: #0f172a; }
-p { margin: 4px 0; font-size: 13px; color: #64748b; }
+.card { display: flex; flex-direction: column; background: var(--surface); border-radius: var(--radius-md); box-shadow: var(--shadow-card); cursor: pointer; transition: transform 160ms ease-out, box-shadow 160ms ease-out; overflow: hidden; }
+.card:hover { transform: translateY(-2px); box-shadow: var(--shadow-pop); }
+.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.cover { aspect-ratio: 4 / 3; background: var(--surface-2); display: flex; align-items: center; justify-content: center; }
+.cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cover .placeholder { color: var(--text-3); font-size: var(--fz-meta); }
+.body { padding: var(--sp-3) var(--sp-4) var(--sp-4); display: flex; flex-direction: column; gap: var(--sp-2); }
+.title { color: var(--text-1); font-size: var(--fz-body); font-weight: 600; line-height: 1.3; margin: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.meta { color: var(--text-3); font-size: var(--fz-meta); display: flex; gap: var(--sp-2); align-items: center; }
+.meta .dot { color: var(--border-strong); }
 </style>
