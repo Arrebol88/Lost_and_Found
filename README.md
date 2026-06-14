@@ -2,6 +2,10 @@
 
 南京大学失物招领与寻物启事平台。当前版本支持发帖、首页展示与筛选、帖子详情、点赞与评论。
 
+仓库：<https://github.com/Arrebol88/Lost_and_Found>
+
+[![CI](https://github.com/Arrebol88/Lost_and_Found/actions/workflows/ci.yml/badge.svg)](https://github.com/Arrebol88/Lost_and_Found/actions/workflows/ci.yml)
+
 ## 功能
 
 - 用户名 + 密码注册 / 登录（bcrypt 哈希、JWT 鉴权、7 天 token）
@@ -36,6 +40,32 @@ docker compose up --build
 
 - 前端：http://localhost:5173
 - 后端 health：http://localhost:8000/api/health
+
+## 公开镜像（GHCR）
+
+CI 会在每次 push 默认分支时自动构建并推送到 GitHub Container Registry。仓库地址：<https://github.com/Arrebol88/Lost_and_Found>
+
+```bash
+# 拉取最新镜像（owner/repo 全部小写）
+docker pull ghcr.io/arrebol88/lost_and_found-backend:latest
+docker pull ghcr.io/arrebol88/lost_and_found-frontend:latest
+
+# 单条命令运行后端（数据卷可选）
+docker run --rm -p 8000:8000 -v nju-data:/app/data \
+  ghcr.io/arrebol88/lost_and_found-backend:latest
+
+# 前端（默认指向 http://localhost:8000，可改 VITE_API_BASE 重新构建）
+docker run --rm -p 5173:5173 ghcr.io/arrebol88/lost_and_found-frontend:latest
+```
+
+> 首次 push 后，请到 GitHub → Profile → Packages 把两个 package 的可见性设为 **Public**，否则上面的 `docker pull` 需要登录。
+
+本地手动构建并推送：
+
+```bash
+# 先 docker login ghcr.io，再
+make docker-push OWNER=arrebol88 TAG=$(git rev-parse --short HEAD)
+```
 
 ## 本地开发
 
@@ -129,4 +159,44 @@ npm test
 - [用户系统 SPEC](docs/superpowers/specs/2026-06-13-user-auth-and-my-posts.md)
 - [用户系统 PLAN](docs/superpowers/plans/2026-06-13-user-auth-and-my-posts-plan.md)
 - [品牌契约 DESIGN.md](DESIGN.md)（受 Open Design 方法论启发）
+- [整体 SPEC](SPEC.md) / [整体 PLAN](PLAN.md) / [SPEC_PROCESS](SPEC_PROCESS.md)
 - [AGENT_LOG](AGENT_LOG.md)
+
+## 第三方依赖与许可证
+
+本项目使用以下开源依赖。完整版本见 `backend/requirements.txt` 与 `frontend/package.json`。
+
+**后端（Python）**
+
+| 库 | 许可证 | 用途 |
+|---|---|---|
+| FastAPI | MIT | Web 框架 |
+| Uvicorn | BSD-3-Clause | ASGI server |
+| SQLAlchemy | MIT | ORM |
+| Pydantic | MIT | schema 校验 |
+| python-multipart | Apache-2.0 | multipart/form-data 解析 |
+| httpx | BSD-3-Clause | TestClient 底层 |
+| pytest | MIT | 测试框架 |
+| passlib | BSD-3-Clause | 密码哈希封装 |
+| bcrypt | Apache-2.0 | bcrypt 实现 |
+| PyJWT | MIT | JWT 编解码 |
+
+**前端（JavaScript）**
+
+| 库 | 许可证 | 用途 |
+|---|---|---|
+| Vue 3 | MIT | UI 框架 |
+| Vite | MIT | 构建工具 |
+| axios | MIT | HTTP 客户端 |
+| Vitest | MIT | 测试框架 |
+| @vue/test-utils | MIT | Vue 组件测试工具 |
+| jsdom | MIT | 浏览器环境模拟 |
+
+**容器与 CI**
+
+| 工具 | 许可证 |
+|---|---|
+| Docker / docker-compose | Apache-2.0 |
+| GitHub Actions（runners） | 第三方服务 |
+
+本项目自身代码采用 [MIT License](LICENSE)。

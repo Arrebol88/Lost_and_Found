@@ -1,8 +1,10 @@
 import axios from 'axios'
 import { getToken, logout } from './auth.js'
 
-// 开发态走 vite 代理（baseURL 空），生产态浏览器直接访问后端 8000
-const baseURL = import.meta.env.PROD ? 'http://localhost:8000' : ''
+// 开发态走 vite 代理（baseURL 空）；生产态默认指向 8000，可通过 VITE_API_BASE 注入
+const baseURL = import.meta.env.PROD
+  ? (import.meta.env.VITE_API_BASE || 'http://localhost:8000')
+  : ''
 const http = axios.create({ baseURL })
 
 http.interceptors.request.use((cfg) => {
