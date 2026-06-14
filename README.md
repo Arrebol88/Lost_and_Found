@@ -119,4 +119,7 @@ npm test
 - [帖子详情与互动 PLAN](docs/superpowers/plans/2026-06-13-post-detail-interactions-plan.md)
 - [帖子编辑与删除 SPEC](docs/superpowers/specs/2026-06-13-post-edit-delete-design.md)
 - [帖子编辑与删除 PLAN](docs/superpowers/plans/2026-06-13-post-edit-delete-plan.md)
+- [视觉重构 SPEC](docs/superpowers/specs/2026-06-13-open-design-visual-refresh.md)
+- [视觉重构 PLAN](docs/superpowers/plans/2026-06-13-open-design-visual-refresh-plan.md)
+- [品牌契约 DESIGN.md](DESIGN.md)（受 Open Design 方法论启发）
 - [AGENT_LOG](AGENT_LOG.md)

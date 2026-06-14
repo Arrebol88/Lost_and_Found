@@ -30,11 +30,14 @@ function fmt(t) {
 </template>
 
 <style scoped>
-.list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-.item { display: flex; justify-content: space-between; gap: 8px; padding: 10px; border: 1px solid #e2e8f0; border-radius: 10px; background: white; }
+.list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; }
+.item { display: flex; justify-content: space-between; gap: var(--sp-3); padding: var(--sp-4) 0; border-bottom: 1px solid var(--border); }
+.item:last-child { border-bottom: 0; }
 .body { min-width: 0; flex: 1; }
-.content { margin: 0 0 6px; color: #0f172a; white-space: pre-wrap; word-break: break-word; }
-.thumb { max-width: 120px; max-height: 120px; border-radius: 6px; }
-.time { margin: 6px 0 0; font-size: 12px; color: #64748b; }
-.del { color: #dc2626; background: transparent; border: 0; cursor: pointer; align-self: flex-start; padding: 2px 4px; }
+.content { margin: 0 0 var(--sp-2); color: var(--text-2); white-space: pre-wrap; word-break: break-word; line-height: 1.7; }
+.thumb { width: 56px; height: 56px; border-radius: var(--radius-sm); object-fit: cover; }
+.time { margin: var(--sp-1) 0 0; font-size: var(--fz-meta); color: var(--text-3); }
+.del { color: var(--text-3); background: transparent; border: 0; cursor: pointer; align-self: flex-start; padding: var(--sp-1) var(--sp-2); font: inherit; font-size: var(--fz-mini); opacity: 0; transition: opacity 160ms; }
+.item:hover .del { opacity: 1; }
+.del:hover { color: var(--danger); }
 </style>

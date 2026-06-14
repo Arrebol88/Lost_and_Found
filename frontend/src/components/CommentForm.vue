@@ -60,9 +60,12 @@ function onSubmit() {
 </template>
 
 <style scoped>
-.comment-form { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; }
-textarea { padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; resize: vertical; font: inherit; }
-.primary { background: #2563eb; color: white; border: 0; padding: 8px 16px; border-radius: 6px; align-self: flex-start; cursor: pointer; }
-.primary:disabled { background: #94a3b8; cursor: not-allowed; }
-.error { color: #dc2626; font-size: 13px; margin: 0; }
+.comment-form { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4); margin-bottom: var(--sp-4); background: var(--surface-2); border-radius: var(--radius-md); }
+textarea { padding: var(--sp-3); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); resize: vertical; min-height: 64px; font: inherit; color: var(--text-1); }
+textarea:focus { outline: none; border-color: var(--accent); }
+input[type="file"] { font-size: var(--fz-meta); color: var(--text-3); }
+.primary { background: var(--accent); color: var(--surface); border: 0; padding: var(--sp-2) var(--sp-4); border-radius: var(--radius-sm); align-self: flex-start; cursor: pointer; font: inherit; font-size: var(--fz-meta); }
+.primary:hover:not(:disabled) { background: var(--accent-hover); }
+.primary:disabled { background: var(--border-strong); cursor: not-allowed; }
+.error { color: var(--danger); font-size: var(--fz-meta); margin: 0; }
 </style>

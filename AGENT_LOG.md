@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-06-13 Open Design 风格视觉重构（T1–T10）
+
+**触发技能链：** `brainstorming` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`（Trae 缺 Task 工具，主会话内联执行 + 任务间自审）→ 每任务 `test-driven-development`（行为测试不变情况下视觉改造也按红/绿节奏跑既有 vitest）→ `verification-before-completion`
+
+**worktree：** `.worktrees/visual-refresh` ← `feature/visual-refresh`
+
+| Commit | 任务 | 备注 |
+|---|---|---|
+| `41b3a1c` | T1 tokens.css + main.js | 新增 17 个色 token + 5 档字号 + 7 档间距 + 阴影/圆角；全局字体栈 |
+| `0a1a129` | T2 App.vue Hero | 把底部 nav 改为顶部 chips；按钮主次分明 |
+| `009c36c` | T3 TypePicker chip | 主操作按钮 token 化 |
+| `0dd45ef` | T4 PostFilters | 暖灰长条容器，select 行 chip |
+| `0d2769c` | T5 PostCard | 纵向卡片：cover + body + tag + title + meta |
+| `c5b9e75` | T6 PostList | 响应式 3/2/1 网格 + 虚线空状态 |
+| `29b440e` | T7 PostDetail | 阅读栏 720px + 顶部 bar；点赞条；联系方式折叠卡片 |
+| `479216b` | T8 评论 | CommentForm 暖灰面板；CommentList 极细分隔 + hover 删除 |
+| `cf4fba7` | T9 表单色 token 化 | PostForm/PostEdit 替换硬编码色 |
+| 待续 | T10 自评 + 文档 | SPEC §11 自评、AGENT_LOG、README 链接 |
+
+**偏离声明：**
+作业要求"凡涉及前端/UI 的项目使用 Open Design"。本会话内 Open Design 桌面 daemon 未启动、`od` CLI 不在 PATH、本地 `7456/7457` 端口无 daemon 监听；无法运行 `od mcp`/`od skills list`/`od project create` 等命令，亦无法生成 OD 原型 / HyperFrame 真正产物。
+故采用 **方法论替代**：仿照 Open Design 的 `DESIGN.md` 品牌契约（色/字/距/阴影/圆角 token）+ 5 维反 AI-slop 自评 + P0/P1/P2 验收清单，把规范手工落到 Vue 组件。改动只覆盖样式与 DOM 节奏，不动行为；现有 38 个 vitest 用例全部不需要修改即可保持绿。
+本次也未运行 `docker compose build`（Docker Desktop 未启动），但前端 `npm run build` 已成功。
+
+**测试总结：**
+- 前端 Vitest：38 passed（与基线一致，未新增 / 未删除测试用例）。
+- 前端 build：成功。
+- 后端：本次未触碰；保持 60 passed 上一基线。
+
+---
+
 ## 2026-06-13 帖子编辑与删除功能实现（T1–T9）
 
 **触发技能链：** `brainstorming` → `writing-plans` → `using-git-worktrees` → `subagent-driven-development`（Trae 缺 Task 工具，主会话内联执行 + 任务间自审）→ 每任务 `test-driven-development` → `verification-before-completion`
