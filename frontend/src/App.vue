@@ -70,16 +70,25 @@ watch([activeTab, filters], loadPosts, { deep: true })
 
 <template>
   <main class="page">
-    <header class="title">南哪寻宝</header>
+    <header class="hero">
+      <div class="hero-text">
+        <h1>南哪寻宝</h1>
+        <div class="sub">校园丢失 / 拾得物匿名汇集</div>
+      </div>
+      <div v-if="view === 'home'" class="hero-actions">
+        <button class="btn-ghost" @click="loadPosts">刷新</button>
+        <button class="btn-primary" data-testid="btn-create" @click="openPicker">我要发帖</button>
+      </div>
+    </header>
 
     <section v-if="view === 'home'" class="home">
-      <PostFilters :filters="filters" @update:filters="filters = $event" />
-      <PostList :posts="posts" :loading="loading" @select="onSelectPost" />
-      <button class="primary floating" data-testid="btn-create" @click="openPicker">发帖</button>
-      <nav class="bottom-nav">
+      <nav class="tabs">
         <button data-testid="tab-lost" :class="{ active: activeTab === 'lost' }" @click="switchTab('lost')">寻物</button>
         <button data-testid="tab-found" :class="{ active: activeTab === 'found' }" @click="switchTab('found')">寻主</button>
       </nav>
+
+      <PostFilters :filters="filters" @update:filters="filters = $event" />
+      <PostList :posts="posts" :loading="loading" @select="onSelectPost" />
     </section>
 
     <PostDetail
@@ -98,17 +107,26 @@ watch([activeTab, filters], loadPosts, { deep: true })
   </main>
 </template>
 
-<style>
-:root { font-family: system-ui, -apple-system, "PingFang SC", sans-serif; }
-body { margin: 0; background: #f8fafc; }
-.page { max-width: 640px; margin: 0 auto; padding: 24px 16px 88px; }
-.title { font-size: 24px; font-weight: 700; color: #0f172a; margin-bottom: 16px; }
-.home { position: relative; }
-.primary { background: #2563eb; color: white; border: 0; padding: 12px 20px;
-  border-radius: 8px; font-size: 16px; cursor: pointer; }
-.primary:hover { background: #1d4ed8; }
-.floating { position: fixed; right: max(16px, calc((100vw - 640px) / 2 + 16px)); bottom: 76px; box-shadow: 0 8px 20px #1e293b33; }
-.bottom-nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: center; background: white; border-top: 1px solid #e2e8f0; }
-.bottom-nav button { width: min(50%, 320px); padding: 14px 0; border: 0; background: white; color: #64748b; font-size: 15px; cursor: pointer; }
-.bottom-nav button.active { color: #2563eb; font-weight: 700; }
+<style scoped>
+.page { max-width: 1080px; margin: 0 auto; padding: var(--sp-6) var(--sp-5) var(--sp-7); }
+.hero { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--sp-5); margin-bottom: var(--sp-6); }
+.hero-text h1 { font-size: var(--fz-display); color: var(--text-1); margin: 0 0 var(--sp-2); font-weight: 600; line-height: 1.3; }
+.hero-text .sub { font-size: var(--fz-meta); color: var(--text-3); }
+.hero-actions { display: flex; gap: var(--sp-3); }
+.btn-primary { background: var(--accent); color: var(--surface); border: 0; padding: var(--sp-2) var(--sp-4); border-radius: var(--radius-sm); cursor: pointer; font: inherit; }
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-ghost { background: var(--surface-2); color: var(--text-1); border: 1px solid var(--border-strong); padding: var(--sp-2) var(--sp-4); border-radius: var(--radius-sm); cursor: pointer; font: inherit; }
+.btn-ghost:hover { border-color: var(--text-3); }
+
+.tabs { display: inline-flex; gap: var(--sp-1); padding: var(--sp-1); background: var(--surface-2); border-radius: var(--radius-sm); margin-bottom: var(--sp-4); }
+.tabs button { background: transparent; border: 0; padding: var(--sp-2) var(--sp-5); font: inherit; font-size: var(--fz-meta); color: var(--text-3); cursor: pointer; border-radius: var(--radius-sm); transition: 160ms; }
+.tabs button.active { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-card); font-weight: 600; }
+.tabs button:hover:not(.active) { color: var(--text-1); }
+
+@media (max-width: 640px) {
+  .page { padding: var(--sp-5) var(--sp-4) var(--sp-6); }
+  .hero { flex-direction: column; align-items: flex-start; }
+  .hero-actions { width: 100%; }
+  .btn-primary, .btn-ghost { flex: 1; }
+}
 </style>
