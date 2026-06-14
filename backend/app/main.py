@@ -46,5 +46,7 @@ def health():
 
 from app.routers import posts as posts_router  # noqa: E402
 from app.routers import comments as comments_router  # noqa: E402
+from app.routers import auth as auth_router  # noqa: E402
+app.include_router(auth_router.router)
 app.include_router(posts_router.router)
 app.include_router(comments_router.router)

@@ -1,8 +1,6 @@
 from datetime import datetime, timedelta
 import os
 
-ANON_A = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-ANON_B = "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
 PNG = (
     b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
     b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\xcf"
@@ -27,27 +25,30 @@ def _create(client, headers, with_image=False):
     return r.json()
 
 
-def test_delete_post_forbidden_for_other_anon(client):
-    pid = _create(client, {"X-Anon-Id": ANON_A})["id"]
-    r = client.delete(f"/api/posts/{pid}", headers={"X-Anon-Id": ANON_B})
+def test_delete_post_forbidden_for_other_user(client, auth):
+    h_alice = auth("alice")
+    h_bob = auth("bob")
+    pid = _create(client, h_alice)["id"]
+    r = client.delete(f"/api/posts/{pid}", headers=h_bob)
     assert r.status_code == 403
 
 
-def test_delete_post_404(client):
-    r = client.delete("/api/posts/9999", headers={"X-Anon-Id": ANON_A})
+def test_delete_post_404(client, headers):
+    r = client.delete("/api/posts/9999", headers=headers)
     assert r.status_code == 404
 
 
-def test_delete_post_cascades(client):
-    h = {"X-Anon-Id": ANON_A}
-    body = _create(client, h, with_image=True)
+def test_delete_post_cascades(client, auth):
+    h_alice = auth("alice")
+    h_bob = auth("bob")
+    body = _create(client, h_alice, with_image=True)
     pid = body["id"]
     image_rel = body["image_path"]
 
-    client.post(f"/api/posts/{pid}/likes", headers={"X-Anon-Id": ANON_B})
+    client.post(f"/api/posts/{pid}/likes", headers=h_bob)
     cmt = client.post(
         f"/api/posts/{pid}/comments",
-        headers=h,
+        headers=h_alice,
         data={"content": "我也见过"},
         files={"image": ("c.png", PNG, "image/png")},
     ).json()
@@ -57,12 +58,12 @@ def test_delete_post_cascades(client):
     assert os.path.exists(main_image)
     assert os.path.exists(cmt_image)
 
-    r = client.delete(f"/api/posts/{pid}", headers=h)
+    r = client.delete(f"/api/posts/{pid}", headers=h_alice)
     assert r.status_code == 204
 
-    r2 = client.get(f"/api/posts/{pid}", headers=h)
+    r2 = client.get(f"/api/posts/{pid}", headers=h_alice)
     assert r2.status_code == 404
-    r3 = client.get(f"/api/posts/{pid}/comments", headers=h)
+    r3 = client.get(f"/api/posts/{pid}/comments", headers=h_alice)
     assert r3.status_code == 404
     assert not os.path.exists(main_image)
     assert not os.path.exists(cmt_image)

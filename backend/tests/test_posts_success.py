@@ -17,9 +17,12 @@ def _form(**overrides):
     return base
 
 
-def test_create_lost_post_no_image(client):
-    r = client.post("/api/posts", data=_form(
-        post_type="lost", contact_type="owner_contact", contact_detail="微信 abc123"))
+def test_create_lost_post_no_image(client, headers):
+    r = client.post(
+        "/api/posts",
+        headers=headers,
+        data=_form(post_type="lost", contact_type="owner_contact", contact_detail="微信 abc123"),
+    )
     assert r.status_code == 201, r.text
     body = r.json()
     assert body["id"] >= 1
@@ -27,7 +30,7 @@ def test_create_lost_post_no_image(client):
     assert body["image_path"] is None
 
 
-def test_create_found_post_with_png(client):
+def test_create_found_post_with_png(client, headers):
     PNG = (
         b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01"
         b"\x08\x06\x00\x00\x00\x1f\x15\xc4\x89\x00\x00\x00\rIDATx\x9cc\xf8\xcf"
@@ -35,6 +38,7 @@ def test_create_found_post_with_png(client):
     )
     r = client.post(
         "/api/posts",
+        headers=headers,
         data=_form(),
         files={"image": ("a.png", PNG, "image/png")},
     )
@@ -47,13 +51,18 @@ def test_create_found_post_with_png(client):
     assert os.path.exists(abs_p)
 
 
-def test_create_post_rejects_free_text_location(client):
-    r = client.post("/api/posts", data=_form(location="逸夫楼 B201"))
+def test_create_post_rejects_free_text_location(client, headers):
+    r = client.post("/api/posts", headers=headers, data=_form(location="逸夫楼 B201"))
     assert r.status_code == 400
     assert "location" in r.json()["detail"]
 
 
-def test_create_post_accepts_campus_location(client):
-    r = client.post("/api/posts", data=_form(location="xianlin"))
+def test_create_post_accepts_campus_location(client, headers):
+    r = client.post("/api/posts", headers=headers, data=_form(location="xianlin"))
     assert r.status_code == 201, r.text
     assert r.json()["location"] == "xianlin"
+
+
+def test_create_post_requires_login(client):
+    r = client.post("/api/posts", data=_form())
+    assert r.status_code == 401

@@ -1,5 +1,7 @@
 import os
-from sqlalchemy import create_engine
+import shutil
+
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 Base = declarative_base()
@@ -15,20 +17,34 @@ def init_db() -> None:
     engine = create_engine(db_url, connect_args={"check_same_thread": False})
     SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     from app import models  # noqa: F401  注册模型到 metadata
+    _purge_legacy_anon_schema()
     Base.metadata.create_all(bind=engine)
-    _ensure_column("posts", "anon_id", "anon_id VARCHAR(36)")
 
 
-def _ensure_column(table: str, column: str, ddl: str) -> None:
-    from sqlalchemy import inspect, text
+def _purge_legacy_anon_schema() -> None:
+    """检测旧版 anon_id schema，若存在则丢弃旧表与上传文件，让 create_all 重建。"""
     insp = inspect(engine)
-    if table not in insp.get_table_names():
+    table_names = set(insp.get_table_names())
+    if "posts" not in table_names:
         return
-    cols = {c["name"] for c in insp.get_columns(table)}
-    if column in cols:
+    posts_cols = {c["name"] for c in insp.get_columns("posts")}
+    if "anon_id" not in posts_cols:
         return
     with engine.begin() as conn:
-        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {ddl}"))
+        conn.execute(text("DROP TABLE IF EXISTS post_comments"))
+        conn.execute(text("DROP TABLE IF EXISTS post_likes"))
+        conn.execute(text("DROP TABLE IF EXISTS posts"))
+    upload_dir = os.getenv("NJU_UPLOAD_DIR", "./uploads")
+    if os.path.isdir(upload_dir):
+        for entry in os.listdir(upload_dir):
+            target = os.path.join(upload_dir, entry)
+            if os.path.isdir(target):
+                shutil.rmtree(target, ignore_errors=True)
+            else:
+                try:
+                    os.remove(target)
+                except OSError:
+                    pass
 
 
 def get_db():
