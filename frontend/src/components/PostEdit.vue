@@ -146,16 +146,19 @@ function onCancel() {
 </template>
 
 <style scoped>
-.edit { max-width: 720px; margin: 0 auto; padding: 16px; }
-.bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-.bar h2 { margin: 0; }
-.ghost { background: transparent; border: 1px solid #cbd5e1; padding: 4px 12px; border-radius: 6px; cursor: pointer; }
-.error { color: #dc2626; }
-.field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-.field label { font-size: 14px; color: #475569; }
-.field input, .field select, .field textarea { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font: inherit; }
-.thumb { max-width: 160px; border-radius: 6px; }
-.checkbox { display: inline-flex; align-items: center; gap: 4px; }
-.primary { background: #2563eb; color: white; border: 0; padding: 10px 18px; border-radius: 8px; cursor: pointer; }
-.primary:disabled { background: #94a3b8; cursor: not-allowed; }
+.edit { max-width: 720px; margin: 0 auto; padding: var(--sp-5); }
+.bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--sp-4); }
+.bar h2 { margin: 0; font-size: var(--fz-h2); color: var(--text-1); font-weight: 600; }
+.ghost { background: var(--surface); border: 1px solid var(--border-strong); padding: var(--sp-1) var(--sp-3); border-radius: var(--radius-sm); cursor: pointer; color: var(--text-2); font: inherit; font-size: var(--fz-meta); }
+.ghost:hover { border-color: var(--text-3); }
+.error { color: var(--danger); font-size: var(--fz-meta); }
+.field { display: flex; flex-direction: column; gap: var(--sp-2); margin-bottom: var(--sp-3); }
+.field label { font-size: var(--fz-meta); color: var(--text-2); }
+.field input, .field select, .field textarea { padding: var(--sp-2) var(--sp-3); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font: inherit; color: var(--text-1); }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); }
+.thumb { max-width: 160px; border-radius: var(--radius-sm); }
+.checkbox { display: inline-flex; align-items: center; gap: var(--sp-1); color: var(--text-3); font-size: var(--fz-meta); }
+.primary { background: var(--accent); color: var(--surface); border: 0; padding: var(--sp-3) var(--sp-5); border-radius: var(--radius-sm); cursor: pointer; font: inherit; }
+.primary:hover:not(:disabled) { background: var(--accent-hover); }
+.primary:disabled { background: var(--border-strong); cursor: not-allowed; }
 </style>

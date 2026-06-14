@@ -147,16 +147,19 @@ function onSubmit() {
 </template>
 
 <style scoped>
-.form { display: flex; flex-direction: column; gap: 12px; padding: 16px 0; }
-.form > label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.form { display: flex; flex-direction: column; gap: var(--sp-3); padding: var(--sp-4) 0; max-width: 720px; margin: 0 auto; }
+.form > label { display: flex; flex-direction: column; gap: var(--sp-1); font-size: var(--fz-meta); color: var(--text-2); }
 .form input, .form select, .form textarea {
-  padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px;
+  padding: var(--sp-2) var(--sp-3); background: var(--surface); border: 1px solid var(--border-strong); border-radius: var(--radius-sm); font: inherit; color: var(--text-1);
 }
-fieldset { border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px 12px; }
-fieldset .radio { display: flex; flex-direction: row; align-items: center; gap: 6px; }
-.error { color: #dc2626; font-size: 14px; }
-.actions { display: flex; gap: 12px; margin-top: 8px; }
-.primary { background: #2563eb; color: white; border: 0; padding: 10px 20px;
-  border-radius: 6px; cursor: pointer; }
-.link { background: transparent; border: 0; color: #64748b; cursor: pointer; }
+.form input:focus, .form select:focus, .form textarea:focus { outline: none; border-color: var(--accent); }
+fieldset { border: 1px solid var(--border-strong); border-radius: var(--radius-sm); padding: var(--sp-2) var(--sp-3); color: var(--text-2); font-size: var(--fz-meta); }
+fieldset .radio { display: flex; flex-direction: row; align-items: center; gap: var(--sp-2); }
+.error { color: var(--danger); font-size: var(--fz-meta); }
+.actions { display: flex; gap: var(--sp-3); margin-top: var(--sp-3); }
+.primary { background: var(--accent); color: var(--surface); border: 0; padding: var(--sp-3) var(--sp-5); border-radius: var(--radius-sm); cursor: pointer; font: inherit; }
+.primary:hover:not(:disabled) { background: var(--accent-hover); }
+.primary:disabled { background: var(--border-strong); cursor: not-allowed; }
+.link { background: transparent; border: 0; color: var(--text-3); cursor: pointer; font: inherit; }
+.link:hover { color: var(--text-1); }
 </style>
