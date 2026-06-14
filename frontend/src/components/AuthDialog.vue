@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { register as apiRegister, login as apiLogin } from '../api.js'
 
 const emit = defineEmits(['success', 'close'])
@@ -10,23 +10,60 @@ const password = ref('')
 const errorMsg = ref('')
 const submitting = ref(false)
 
+const USERNAME_RE = /^[\w\u4e00-\u9fa5]{3,32}$/
+
+const localError = computed(() => {
+  const u = username.value.trim()
+  if (mode.value === 'register') {
+    if (u && !USERNAME_RE.test(u)) {
+      return '用户名需 3–32 位，仅字母、数字、下划线、汉字'
+    }
+    if (password.value && password.value.length < 6) {
+      return '密码需至少 6 位'
+    }
+  }
+  return ''
+})
+
+function formatDetail(detail, fallback) {
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail) && detail.length > 0) {
+    const first = detail[0]
+    const loc = (first.loc || []).filter(x => x !== 'body').join('.')
+    const msg = first.msg || '校验失败'
+    if (loc.endsWith('username')) return '用户名不合法：' + msg
+    if (loc.endsWith('password')) return '密码不合法：' + msg
+    return `${loc}: ${msg}`
+  }
+  return fallback
+}
+
 async function onSubmit() {
   if (submitting.value) return
   errorMsg.value = ''
-  if (!username.value.trim() || !password.value) {
+  const u = username.value.trim()
+  if (!u || !password.value) {
     errorMsg.value = '请输入用户名与密码'
     return
+  }
+  if (mode.value === 'register') {
+    if (!USERNAME_RE.test(u)) {
+      errorMsg.value = '用户名需 3–32 位，仅字母、数字、下划线、汉字'
+      return
+    }
+    if (password.value.length < 6) {
+      errorMsg.value = '密码需至少 6 位'
+      return
+    }
   }
   submitting.value = true
   try {
     const action = mode.value === 'login' ? apiLogin : apiRegister
-    const data = await action(username.value.trim(), password.value)
+    const data = await action(u, password.value)
     emit('success', data)
   } catch (err) {
     const detail = err && err.response && err.response.data && err.response.data.detail
-    errorMsg.value = typeof detail === 'string'
-      ? detail
-      : (mode.value === 'login' ? '登录失败' : '注册失败')
+    errorMsg.value = formatDetail(detail, mode.value === 'login' ? '登录失败' : '注册失败')
   } finally {
     submitting.value = false
   }
@@ -44,7 +81,7 @@ function onKeyDown(e) {
 
 <template>
   <div class="auth-mask" @click.self="$emit('close')" @keydown="onKeyDown" tabindex="0">
-    <div class="auth-dialog" role="dialog" aria-label="登录或注册">
+    <form class="auth-dialog" role="dialog" aria-label="登录或注册" @submit.prevent="onSubmit">
       <div class="tabs">
         <button
           type="button"
@@ -69,8 +106,8 @@ function onKeyDown(e) {
           type="text"
           autofocus
           autocomplete="username"
+          name="username"
           data-testid="auth-username"
-          @keyup.enter="onSubmit"
         />
       </label>
       <label class="field">
@@ -78,25 +115,25 @@ function onKeyDown(e) {
         <input
           v-model="password"
           type="password"
-          autocomplete="current-password"
+          :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
+          name="password"
           data-testid="auth-password"
-          @keyup.enter="onSubmit"
         />
+        <span v-if="mode === 'register'" class="hint">至少 6 位；用户名 3–32 位（字母、数字、下划线、汉字）</span>
       </label>
 
-      <p v-if="errorMsg" class="error" data-testid="auth-error">{{ errorMsg }}</p>
+      <p v-if="errorMsg || localError" class="error" data-testid="auth-error">{{ errorMsg || localError }}</p>
 
       <div class="actions">
         <button type="button" class="btn-ghost" @click="$emit('close')">取消</button>
         <button
-          type="button"
+          type="submit"
           class="btn-primary"
-          :disabled="submitting || !username.trim() || !password"
+          :disabled="submitting || !username.trim() || !password || !!localError"
           data-testid="auth-submit"
-          @click="onSubmit"
         >{{ mode === 'login' ? '登录' : '注册' }}</button>
       </div>
-    </div>
+    </form>
   </div>
 </template>
 
@@ -137,6 +174,7 @@ function onKeyDown(e) {
   color: var(--text-1);
 }
 .field input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.field .hint { font-size: var(--fz-mini); color: var(--text-3); }
 .error { color: var(--danger); font-size: var(--fz-meta); margin: 0; }
 .actions { display: flex; justify-content: flex-end; gap: var(--sp-2); }
 .btn-primary {
