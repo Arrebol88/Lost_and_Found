@@ -150,7 +150,7 @@
 
 ---
 
-## 2026-06-13 实现完成（T1–T14）
+## 2026-06-13 发帖实现完成（T1–T14）
 
 **触发技能链：** `subagent-driven-development`（偏离声明见下文）→ 每任务 `test-driven-development` 红绿循环 → `verification-before-completion`
 
